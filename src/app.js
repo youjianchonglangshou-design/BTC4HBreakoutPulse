@@ -4,7 +4,7 @@ import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
 import {selectFirstBarrier} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.1.4';
+import {renderCandles4h} from './chart.js?v=1.2.0';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 const $=id=>document.getElementById(id);
@@ -115,7 +115,12 @@ function renderLevels(pred,now){
  const floor=Number.isFinite(price)&&atr>0?selectFirstBarrier(confirmedAtDecision,selectionTime,price,atr,'底齊',{maxAgeDays:365,maxDistanceATR:3,maxTouches:8}):null;
  for(const [id,line] of [['top',top],['floor',floor]]){
   set(id==='top'?'topLevel':'floorLevel',line?fmt(line.level,1):'尚無有效關卡');
-  set(id==='top'?'topDetail':'floorDetail',line?`確認 ${tpeTime(line.confirmed)} · 測試 ${line.episodes} 回`:'不強制選用過期舊線');
+  set(id==='top'?'summaryTop':'summaryFloor',line?fmt(line.level,1):'—');
+  set(id==='top'?'topDetail':'floorDetail',line?`確認 ${tpeTime(line.confirmed).slice(5)} · 測試 ${line.episodes} 回`:'目前無有效關卡');
+  set(id==='top'?'topConfirmed':'floorConfirmed',line?tpeTime(line.confirmed):'—');
+  set(id==='top'?'topTouches':'floorTouches',line?`${line.episodes} 回`:'—');
+  set(id==='top'?'topCrosses':'floorCrosses',line?`${line.crossCount} 次`:'—');
+  set(id==='top'?'topDistance':'floorDistance',line&&atr>0?`${fmt(Math.abs(line.level-price)/atr,3)} ATR`:'—');
  }
  // On frozen days the active target must remain the immutable 20:00 line.
  const target=pred?.line??null;
@@ -134,14 +139,12 @@ function render(){
  const now=Date.now(),window=forecastWindow(now),pre=window.pre;
  set('clock',tpeClock(now));
  set('countdown',pre?countdown(window.cut-now):now<window.end?countdown(window.end-now):'00:00:00');
- set('phaseText',pre?'20:00 前動態預測 · 20:00 同時鎖定關卡與機率 · 00:00 驗證':'20:00 機率已鎖定 · 價格與圖表持續更新 · 00:00 驗證');
  maybeFreezeAndSettle(now);
  let snap=pre?createModelData(now):getFrozen(window.date);
  if(!pre&&!snap)snap={status:'FREEZE_PENDING',reason:'20:00 已停止動態推算，正以20:00之前已收線的歷史K線重建快照'};
  const frozen=!pre;
  const activeKind=snap?.kind??(snap?.daily?.above?'頂齊':snap?.daily?.above===false?'底齊':null);
  const labels=getDirectionLabels(activeKind);
- set('heroVerb',labels.verb);set('heroTarget',labels.object);
  $('freezeBadge').className=frozen?'chip frozen':'chip active';
  set('freezeBadge',frozen?'20:00 已凍結':'動態 · 10秒更新');
  set('freezeText',frozen?'預測關卡與機率鎖定；價格與瀏覽器頁籤仍每10秒更新。':'20:00 前持續推演；訓練只校準20:00時點，盤前機率屬實驗性。');
@@ -149,14 +152,19 @@ function render(){
   set('midState',`${snap.daily.side} · ${fmt(snap.daily.midline,1)}`);
   set('slopeState',`${snap.daily.slopeLabel}（${fmt(snap.daily.slopePctPerDay,3)}%／日）`);
   set('haState',`${snap.daily.averageK}色 · HA ${fmt(snap.daily.haClose,1)}`);
- }else{set('midState','資料不足');set('slopeState','—');set('haState','—');}
+  set('summaryMid',`${snap.daily.side} · ${fmt(snap.daily.midline,1)}`);
+  set('summarySlope',`${snap.daily.slopeLabel} · ${fmt(snap.daily.slopePctPerDay,3)}%/日`);
+  set('summaryHA',`${snap.daily.averageK}色 · ${fmt(snap.daily.haClose,1)}`);
+ }else{
+  for(const id of ['midState','summaryMid'])set(id,'資料不足');
+  for(const id of ['slopeState','summarySlope','haState','summaryHA'])set(id,'—');
+ }
  if(snap?.status==='OK'){
   S.lastPrediction=snap;
   const p=snap.prediction,percent=p.probability*100;
   set('probName',getDirectionLabels(snap.kind).title);
   set('probability',`${fmt(percent,1)}%`);
   set('probInterpret',percent>=55?getDirectionLabels(snap.kind).strong:percent<=45?getDirectionLabels(snap.kind).weak:'接近中性');
-  $('meterFill').style.width=`${Math.min(100,Math.max(0,percent))}%`;
   set('explanation',snap.kind==='底齊'?p.reason.replaceAll('突破','跌破').replaceAll('頂齊','底齊'):p.reason);
   setFeatureRows([
    ['預測目標',`${snap.kind} ${fmt(snap.line.level,1)}`],
@@ -169,7 +177,7 @@ function render(){
   renderLevels(snap,now);
  }else{
   set('probName',getDirectionLabels(snap?.kind).title);
-  set('probability','—');set('probInterpret','沒有可靠機率');$('meterFill').style.width='0%';
+  set('probability','—');set('probInterpret','沒有可靠機率');
   set('explanation',snap?.reason||'正在讀取九年模型權重、4H及15M歷史與日線數據。');
   setFeatureRows([['狀態',snap?.status||'WAITING'],['原則','缺資料／無關卡時不猜測']]);
   renderLevels(snap,now);
@@ -198,3 +206,22 @@ setInterval(()=>{
 setInterval(()=>render(),1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){void pollQuote();void loadHistory(false);}});
 initialize();
+
+// Summary cards behave like TennisRatio rating panels: hover (desktop), focus
+// (keyboard), or tap-to-toggle (touch). Clicking outside closes a pinned card.
+const summaryCards=[...document.querySelectorAll('.quick-card')];
+for(const card of summaryCards){
+ card.addEventListener('click',event=>{
+  if(event.target.closest('.detail-popover'))return;
+  const open=!card.classList.contains('is-open');
+  summaryCards.forEach(el=>el.classList.remove('is-open'));
+  if(open)card.classList.add('is-open');
+ });
+ card.addEventListener('keydown',event=>{
+  if(event.key==='Escape'){card.classList.remove('is-open');card.blur();}
+  if(event.key==='Enter'||event.key===' '){event.preventDefault();card.click();}
+ });
+}
+document.addEventListener('click',event=>{
+ if(!event.target.closest('.quick-card'))summaryCards.forEach(el=>el.classList.remove('is-open'));
+});

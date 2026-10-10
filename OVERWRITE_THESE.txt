@@ -1,3 +1,18 @@
-BTC4HBreakoutPulse v1.1.4：請依照壓縮包內的相對路徑覆蓋到現有 GitHub 儲存庫根目錄。
-必須覆蓋：index.html、src/app.js、src/chart.js。
-其他檔案：VERSION.json、package.json、README.md、TEST_REPORT.md、tests/chart.test.mjs、tests/barrier_cursor_browser.py（版本與測試記錄）。
+BTC4HBreakoutPulse v1.2.0
+將以下檔案依相對路徑覆蓋 GitHub 儲存庫 main 根目錄：
+
+index.html
+styles.css
+VERSION.json
+package.json
+README.md
+TEST_REPORT.md
+OVERWRITE_THESE.txt
+src/app.js
+src/chart.js
+tests/app.integration.test.mjs
+tests/chart.test.mjs
+tests/layout_contract.test.mjs
+tests/compact_layout_browser.py
+
+不需改動 Worker、不需 GitHub Actions。GitHub Pages cache-busting 版本已同步修改。

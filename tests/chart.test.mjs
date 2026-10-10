@@ -34,7 +34,7 @@ test('large SVG keeps price label and breathing orb; barrier label is NOT render
    const svg=node();const data=candles();const target={kind,level:81650};
    renderCandles4h(svg,data,target,{now,currentPrice:82130});
    let all=flatten(svg);
-   assert.equal(svg.attrs.viewBox,'0 0 1200 460');
+   assert.equal(svg.attrs.viewBox,'0 0 1200 405');
    assert.ok(all.some(x=>x.tag==='text'&&x.textContent==='NOW 82,130.0'));
    assert.ok(!all.some(x=>x.tag==='text'&&x.textContent===`${kind} 81,650.0`),'never a persistent barrier label');
    assert.ok(all.some(x=>x.attrs.stroke==='#23d7ee'&&x.attrs['stroke-dasharray']==='8 7'));
@@ -72,15 +72,15 @@ test('hover tooltip tracks pointer X in chart coordinates and NEVER occupies the
    renderCandles4h(svg,data,{kind,level:82130},{now,currentPrice:82130});
    const hit=flatten(svg).find(x=>x.attrs['data-role']==='barrier-hover-hit');
    assert.ok(hit);
-   assert.equal(hit.attrs.x2,'1006','hover coverage ends at plot boundary, not NOW gutter');
+   assert.equal(hit.attrs.x2,'1061','hover coverage ends at plot boundary, not NOW gutter');
    const rects=[];
-   for(const x of [140,520,970]){
+   for(const x of [140,540,1030]){
     hit.dispatch('pointermove',{svgX:x,svgY:Number(hit.attrs.y1)});
     const tooltip=flatten(svg).find(x=>x.attrs['data-role']==='barrier-tooltip');
     assert.ok(tooltip);
     const tx=Number(tooltip.attrs['data-tooltip-x']);
     rects.push(tx);
-    assert.ok(tx>=79&&tx+158<=1006,'floating label stays inside plot to avoid NOW label overlap');
+    assert.ok(tx>=61&&tx+136<=1061,'floating label stays inside plot to avoid NOW label overlap');
     assert.equal(flatten(svg).filter(x=>x.textContent===`${kind} 82,130.0`).length,1);
    }
    assert.ok(rects[0]<rects[1]&&rects[1]<rects[2],`tooltip must MOVE left-to-right with mouse, got ${rects}`);
@@ -88,6 +88,6 @@ test('hover tooltip tracks pointer X in chart coordinates and NEVER occupies the
    assert.equal(flatten(svg).filter(x=>x.attrs['data-role']==='barrier-tooltip').length,0);
   }
   // The geometry is clamped away from the RIGHT gutter, no matter where the cursor is.
-  assert.ok(hoverTooltipGeometry(1100,200).x+158<1024);
+  assert.ok(hoverTooltipGeometry(1100,200).x+136<1070);
  }finally{globalThis.document=prev;}
 });
