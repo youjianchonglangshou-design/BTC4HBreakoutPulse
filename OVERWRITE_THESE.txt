@@ -3,6 +3,7 @@
 - index.html
 - styles.css
 - src/app.js
+- src/chart.js
 - VERSION.json
 - package.json
 - README.md

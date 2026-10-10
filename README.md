@@ -1,8 +1,8 @@
-# BTC 4H Breakout Pulse · v1.1.1（Pionex 4H 大圖／價格呼吸光版）
+# BTC 4H Breakout Pulse · v1.1.2（Pionex 4H 大圖／價格呼吸光版）
 
 獨立 GitHub Pages 靜態專案，對應 `https://youjianchonglangshou-design.github.io/BTC4HBreakoutPulse/`。
 
-## v1.1.1 大圖排版與 10 秒價格標籤
+## v1.1.2 大圖排版與 10 秒價格標籤
 
 - 主畫面改為 **Pionex 4H 全寬 K 線圖**（最近最多 40 根），不用小型左側圖。支援即時 4H 形成中 K 線的圖形顯示，**確認結構與機率推論仍只用已收線 K**。
 - 延續舊 BTCFLOWPulse `src/ui.js` 視覺設計：**青色價格水平虛線、右側 NOW 價格標籤、會呼吸的發光小圓球**；圖表右側獨立留白給標籤，避免價格資訊壓住 K 線。
@@ -44,7 +44,7 @@ python3 -m http.server 8000
 額外新增 `tests/chart.test.mjs` 確認即時價格標籤／虛線／呼吸動畫、已收線與 LIVE K 分離；`tests/visual_smoke.py` 以 Chromium 離線渲染桌面／手機版面（需安裝 Playwright），不測試實際公開 API。
 
 
-## v1.1.1
+## v1.1.2
 
 - 移除上方品牌與大標題，縮短上方版面
 - 預測時段倒數移到派網 10 秒更新膠囊左側

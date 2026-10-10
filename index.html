@@ -5,17 +5,11 @@
 <meta name="description" content="BTC Pionex 4H 頂齊突破、底齊跌破預測：20:00 前動態，20:00 凍結。">
 <meta name="theme-color" content="#071321">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=1.1.1">
+<link rel="stylesheet" href="styles.css?v=1.1.2">
 <title>BTC</title>
 </head>
 <body>
 <div class="page">
-<header class="topbar compact-topbar">
-  <div class="top-pills" aria-label="狀態膠囊">
-    <div class="status-pill countdown-pill"><span>預測時段倒數</span><strong id="countdown">--:--:--</strong></div>
-    <div class="status-pill live-pill"><span class="pulse-dot"></span><strong id="connection">派網 10秒更新 · --:--:--</strong></div>
-  </div>
-</header>
 <div id="error" class="error" role="status" hidden></div>
 <main class="market-stage compact-stage">
   <section class="pane chart-pane" aria-label="主要 Pionex 4H K 線圖">
@@ -24,6 +18,10 @@
         <small>LIVE 4H · STRUCTURE + PRICE</small>
         <h2>派網 4H K 線｜頂齊・底齊・即時價格</h2>
         <p class="chart-subnote" id="phaseText">20:00 前動態預測 · 20:00 同時鎖定關卡與機率 · 00:00 驗證</p>
+      </div>
+      <div class="top-pills inside-pills" aria-label="狀態膠囊">
+        <div class="status-pill countdown-pill"><span>預測時段倒數</span><strong id="countdown">--:--:--</strong></div>
+        <div class="status-pill live-pill"><span class="pulse-dot"></span><strong id="connection">派網 10秒更新 · --:--:--</strong></div>
       </div>
     </div>
     <div class="chart-frame">
@@ -55,6 +53,6 @@
 <section class="below pane"><div class="section-title"><div><small>FORECAST ARCHIVE</small><h2>20:00 凍結與 00:00 驗證紀錄</h2></div><span class="chip" id="archiveCount">本裝置紀錄</span></div><div id="archive" class="archive"><p class="micro">尚無凍結紀錄。</p></div></section>
 <footer>圖表、結構、日線與報價採用 Pionex BTC_USDT_PERP；頁籤顯示最新派網報價。v6.0 權重由 Binance 現貨歷史訓練，派網資料尚待重校準。20:00 以後圖表／報價繼續更新，當次機率及目標關卡不會更改。靜態 GitHub Pages 不跨裝置同步快照。</footer>
 </div>
-<script type="module" src="src/app.js?v=1.1.1"></script>
+<script type="module" src="src/app.js?v=1.1.2"></script>
 </body>
 </html>
