@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="BTC 4H 頂齊與底齊有效突破機率：20:00 前即時更新，20:00 凍結、00:00 驗證。">
+<meta name="description" content="BTC 4H 頂齊突破或底齊跌破機率：20:00 前即時更新，20:00 凍結、00:00 驗證。">
 <meta name="theme-color" content="#081426">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles.css">
@@ -11,13 +11,13 @@
 <body>
 <div class="page">
 <header class="topbar">
- <a class="brand" href="./"><span class="mark">B<span>4</span></span><span><strong>BTC 4H BREAKOUT</strong><small>FLOW 結構機率 · v1.0.0</small></span></a>
+ <a class="brand" href="./"><span class="mark">B<span>4</span></span><span><strong>BTC 4H BREAKOUT</strong><small>FLOW 結構機率 · v1.0.1</small></span></a>
  <div class="topstat"><small>台灣時間</small><strong id="clock">--:--:--</strong></div>
  <div class="topstat quote"><small id="quoteSource">PIONEX 永續合約現價</small><strong id="livePrice">載入中…</strong></div>
  <div class="live"><span class="pulse-dot"></span><span id="connection">連接報價中</span></div>
 </header>
 <section class="hero">
- <div><span class="eyebrow">4H STRUCTURE · 20:00 → 00:00 TPE</span><h1>下一根 4H，能否<span>突破結構</span>？</h1><p>20:00 前動態計算 · 20:00 凍結機率與關卡 · 00:00 獨立驗證</p></div>
+ <div><span class="eyebrow">4H STRUCTURE · 20:00 → 00:00 TPE</span><h1>下一根 4H，能否<span id="heroVerb">突破</span><span id="heroTarget">頂齊</span>？</h1><p>20:00 前動態計算 · 20:00 凍結機率與關卡 · 00:00 獨立驗證</p></div>
  <div class="hero-stat"><small>下一次預測鎖定</small><strong id="countdown">--:--:--</strong><span id="phaseText">等待行情</span></div>
 </section>
 <div id="error" class="error" role="status" hidden></div>
@@ -29,7 +29,7 @@
    <article class="level-card top-level"><div class="level-name"><span>向上第一道</span><strong>頂齊</strong></div><b id="topLevel">—</b><div class="micro" id="topDetail">尚未定位</div></article>
    <article class="level-card floor-level"><div class="level-name"><span>向下第一道</span><strong>底齊</strong></div><b id="floorLevel">—</b><div class="micro" id="floorDetail">尚未定位</div></article>
   </div>
-  <div class="chart-frame"><div class="chart-title"><strong>BTCUSDT · 最近 32 根 4H</strong><span id="chartSource">Binance Spot</span></div><svg id="candles" viewBox="0 0 850 240" role="img" aria-label="近期4H K線與目前突破目標"></svg><p class="micro">橘色水平線為目前模型的預測目標；僅顯示已收線的 4H K 線。</p></div>
+  <div class="chart-frame"><div class="chart-title"><strong>PIONEX:BTCUSDT.P · 最近 32 根 4H</strong><span id="chartSource">PIONEX PERP</span></div><svg id="candles" viewBox="0 0 850 240" role="img" aria-label="近期4H K線與目前突破目標"></svg><p class="micro">橘色水平線為目前模型的預測目標；僅顯示已收線的 4H K 線。</p></div>
   <div class="level-info"><div><small>確認時間</small><b id="lineConfirmed">—</b></div><div><small>歷史接觸回合</small><b id="touchCount">—</b></div><div><small>歷史突破事件</small><b id="crossCount">—</b></div><div><small>距離關卡</small><b id="distance">—</b></div></div>
  </section>
  <section class="pane right">
@@ -42,7 +42,7 @@
  </section>
 </main>
 <section class="below pane"><div class="section-title"><div><small>FORECAST ARCHIVE</small><h2>凍結與驗證紀錄</h2></div><span class="chip" id="archiveCount">本裝置紀錄</span></div><div id="archive" class="archive"><p class="micro">尚無凍結紀錄；首次20:00完成後會寫入本裝置。</p></div></section>
-<footer>研究型機率，不是做多／做空勝率。v6.0 以 Binance BTCUSDT 現貨九年資料訓練；主頁 Pionex 合約報價僅供觀察，與模型資料來源分開。未觸發有效關卡時不顯示猜測機率。此 GitHub Pages 靜態版本無伺服器排程，多裝置的歷史紀錄不自動同步。</footer>
+<footer>研究型機率，不是做多／做空勝率。全站 4H／15M／1D／現價均使用 Pionex BTC_USDT_PERP；v6.0 原權重以 Binance 現貨九年資料訓練，尚未完成 Pionex 重校準，因此實際機率僅供研究。未觸發有效關卡時不顯示猜測機率。此 GitHub Pages 靜態版本無伺服器排程，多裝置的歷史紀錄不自動同步。</footer>
 </div>
 <script type="module" src="src/app.js"></script>
 </body>

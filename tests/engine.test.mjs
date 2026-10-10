@@ -47,3 +47,17 @@ test('settlement cannot happen before00 even if a future partial candle is suppl
  assert.equal(settle.status,'SETTLED');
  assert.equal(settle.success,snap.kind==='頂齊'?settle.close>snap.line.level*1.0001:settle.close<snap.line.level*.9999);
 });
+
+test('daily HA below midline selects the lower Pionex 4H floor (跌破), not the 4H top',()=>{
+ const modified=fixture.daily.map((b,i)=>{
+  if(i<fixture.daily.length-21||i===fixture.daily.length-1)return b;
+  return {...b,open:b.open*1.05,high:b.high*1.05,low:b.low*1.05,close:b.close*1.05};
+ });
+ const result=evaluate({fourHour:fixture.fourHour,fifteenMin:fixture.fifteenMin,daily:modified,
+  price:86223.4,asOf:Date.parse('2026-10-05T11:55:00Z'),model,gate});
+ assert.equal(result.status,'OK');
+ assert.equal(result.daily.side,'中軌之下');
+ assert.equal(result.kind,'底齊');
+ assert.ok(result.line.level<result.price);
+ assert.equal(result.prediction.definition,'00:00 收盤 < 底齊 × 0.9999');
+});

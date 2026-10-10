@@ -1,5 +1,5 @@
 /* BTC 4H structural breakout v4 - pure JS, no network, no GitHub Actions.
-   20:00 reference model, Binance spot 2017-2023 training, 2024-2026 untouched holdout.
+   20:00 reference model, Binance spot 2017-2023 model training; Pionex current market data, 2024-2026 untouched holdout.
    For historical stress testing, not an execution / financial advice engine.
  */
 export const BREAK_MODEL_V4 = Object.freeze({

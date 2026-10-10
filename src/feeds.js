@@ -1,71 +1,81 @@
-const BINANCE_HOSTS=['https://data-api.binance.vision','https://api.binance.com'];
-const BAR_MS={"4h":4*3600000,"15m":900000,"1d":86400000};
-const fetchTimeout=async(url,opts={},timeoutMs=10000)=>{
- const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);
+/** BTCFLOWPulse proven public market-data pipeline, Pionex PERP exclusively.
+ * TV chart protocol via the user's existing Worker, plus official Pionex Worker REST fallback.
+ * Deliberately NO Binance ticker/candle substitutions. */
+import {fetchTradingViewHistory} from './tv_history.js';
+export const PIONEX_SYMBOL='BTC_USDT_PERP';
+export const TV_SYMBOL='PIONEX:BTCUSDT.P';
+export const WORKER='https://white-meadow-16bc.youjianchonglangshou.workers.dev';
+const TV_SCAN='https://scanner.tradingview.com/crypto/scan';
+const BAR_MS={'4h':14400000,'15m':900000,'1d':86400000};
+const PIONEX_INTERVAL={'4h':'4H','15m':'15M','1d':'1D'};
+const MAX_BARS={'4h':2400,'15m':500,'1d':300};
+const good=n=>Number.isFinite(n)&&n>0;
+async function fetchJSON(url,options={},timeout=12000){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeout);
  try{
-  const response=await fetch(url,{...opts,signal:ctrl.signal,cache:'no-store'});
+  const response=await fetch(url,{...options,signal:controller.signal,cache:'no-store'});
   if(!response.ok)throw Error(`HTTP ${response.status} @ ${new URL(url).host}`);
-  return await response.json();
+  const j=await response.json();if(j?.ok===false)throw Error(j.error||j.message||'Worker API error');return j;
  }finally{clearTimeout(timer);}
-};
-export function parseBinanceBars(payload){
- if(!Array.isArray(payload))throw Error('歷史回傳不是陣列');
- return payload.map(r=>({ts:+r[0],open:+r[1],high:+r[2],low:+r[3],close:+r[4],volume:+r[5]}))
- .filter(b=>Number.isFinite(b.ts)&&[b.open,b.high,b.low,b.close].every(x=>Number.isFinite(x)&&x>0)).sort((a,b)=>a.ts-b.ts);
 }
-async function requestKlines(interval,limit,endTime){
- let lastError;
- for(const host of BINANCE_HOSTS){
-  try{
-   const p=new URLSearchParams({symbol:'BTCUSDT',interval,limit:String(limit)});
-   if(Number.isFinite(endTime))p.set('endTime',String(endTime));
-   return parseBinanceBars(await fetchTimeout(`${host}/api/v3/klines?${p.toString()}`));
-  }catch(e){lastError=e;}
- }
- throw Error(`Binance ${interval} 無法讀取：${lastError?.message}`);
+export function normalizePionexKlines(payload,interval){
+ const step=BAR_MS[interval];
+ if(!Array.isArray(payload))throw Error('Pionex historical data is not an array');
+ return [...new Map(payload.map(r=>{
+  const t=Array.isArray(r)?r[0]:r?.time??r?.ts??r?.timestamp;
+  let ts=Number(t);if(ts>0&&ts<1e12)ts*=1000;
+  const [open,high,low,close,volume]=Array.isArray(r)?r.slice(1,6):[r?.open,r?.high,r?.low,r?.close,r?.volume];
+  return {ts,open:+open,high:+high,low:+low,close:+close,volume:+(volume??0)};
+ }).filter(x=>Number.isFinite(x.ts)&&x.ts%step===0&&[x.open,x.high,x.low,x.close].every(good)).map(x=>[x.ts,x])).values()].sort((a,b)=>a.ts-b.ts);
 }
-export async function fetchKlines(interval,count){
+export async function fetchWorkerPionexKlines(interval,count,{refresh=false}={}){
  if(!BAR_MS[interval])throw Error('unsupported interval');
- const target=Math.min(3000,Math.max(1,count));
- let out=[],end=undefined;
- while(out.length<target){
-  const batch=await requestKlines(interval,Math.min(1000,target-out.length),end);
-  if(!batch.length)break;
-  out=batch.concat(out);
-  if(batch.length<Math.min(1000,target-out.length+batch.length))break;
-  end=batch[0].ts-1;
-  if(out.length>=target)break;
- }
- return [...new Map(out.map(b=>[b.ts,b])).values()].sort((a,b)=>a.ts-b.ts).slice(-target);
+ const url=new URL('/api/monitor/klines',WORKER);
+ url.searchParams.set('symbol',PIONEX_SYMBOL);
+ url.searchParams.set('interval',PIONEX_INTERVAL[interval]);
+ url.searchParams.set('limit',String(Math.min(300,count)));
+ if(refresh)url.searchParams.set('refresh','1');
+ const j=await fetchJSON(url.toString());
+ const bars=normalizePionexKlines(j.klines??[],interval);
+ if(!bars.length)throw Error(`Worker Pionex ${PIONEX_INTERVAL[interval]} history empty`);
+ return {bars,source:`Worker Pionex ${PIONEX_SYMBOL} ${PIONEX_INTERVAL[interval]}`,fetchedAt:j.fetched_at};
 }
-export async function fetchLatestKlines(interval,limit=350){return requestKlines(interval,limit);}
-const valid=n=>Number.isFinite(n)&&n>0;
+export async function fetchPionexKlines(interval,count,{timeoutMs=25000}={}){
+ if(!BAR_MS[interval])throw Error('unsupported interval');
+ const target=Math.max(2,Math.min(MAX_BARS[interval],Math.trunc(count)||2));
+ try{
+  const r=await fetchTradingViewHistory({workerBaseUrl:WORKER,symbol:TV_SYMBOL,
+   resolution:interval==='4h'?'240':interval==='1d'?'1D':'15',bars:target,timeoutMs});
+  const bars=normalizePionexKlines(r.bars,interval);
+  if(bars.length<2)throw Error('TradingView Pionex candles insufficient');
+  return {bars,source:`TradingView chart → ${TV_SYMBOL} ${interval}`,fetchedAt:Date.now()};
+ }catch(tvError){
+  try{
+   const rest=await fetchWorkerPionexKlines(interval,target);
+   return {...rest,warning:`TradingView chart unavailable: ${tvError.message}`};
+  }catch(workerError){throw Error(`PIONEX ${interval} history failed: TV ${tvError.message}; Worker ${workerError.message}`);}
+ }
+}
+export const fetchKlines=(interval,count)=>fetchPionexKlines(interval,count);
+export const fetchLatestKlines=(interval,count)=>fetchPionexKlines(interval,count,{timeoutMs:18000});
 export function decodeScannerPayload(json){
- const rows=(json?.data||[]),find=code=>rows.find(r=>String(r.s).toUpperCase()===code)?.d;
- const pion=find('PIONEX:BTCUSDT.P'),spot=find('BINANCE:BTCUSDT');
- return {pionex:valid(+pion?.[0])?+pion[0]:null,spot:valid(+spot?.[0])?+spot[0]:null};
+ const r=(json?.data||[]).find(x=>String(x?.s||'').toUpperCase()===TV_SYMBOL);
+ const n=Number(r?.d?.[0]);return {pionex:good(n)?n:null,spot:null};
 }
 export async function fetchQuotes(){
- let primaryErr=null;
+ let scanError=null;
  try{
-  const body={filter:[],options:{lang:'en'},symbols:{query:{types:[]},tickers:['PIONEX:BTCUSDT.P','BINANCE:BTCUSDT']},columns:['close'],range:[0,10]};
-  const json=await fetchTimeout('https://scanner.tradingview.com/crypto/scan',{
-   method:'POST',mode:'cors',headers:{Accept:'application/json','Content-Type':'text/plain'},body:JSON.stringify(body)
-  },9000);
-  const data=decodeScannerPayload(json);
-  if(data.pionex&&data.spot)return {...data,source:'TradingView Scanner',ts:Date.now()};
-  if(data.pionex&&!data.spot){
-   try{const x=await fetchTimeout('https://data-api.binance.vision/api/v3/ticker/price?symbol=BTCUSDT',{},9000);
-    if(valid(+x.price))return {pionex:data.pionex,spot:+x.price,source:'TradingView Pionex + Binance spot backup',ts:Date.now()};
-   }catch{}
-   return {...data,source:'TradingView Pionex only',ts:Date.now()};
-  }
-  if(data.spot)return {...data,source:'TradingView Binance spot only',ts:Date.now()};
-  primaryErr=new Error('Scanner returned no BTC quotes');
- }catch(e){primaryErr=e;}
+  const body={filter:[],options:{lang:'en'},symbols:{query:{types:[]},tickers:[TV_SYMBOL]},columns:['close'],range:[0,10]};
+  const j=await fetchJSON(TV_SCAN,{method:'POST',mode:'cors',headers:{Accept:'application/json','Content-Type':'text/plain'},body:JSON.stringify(body)},9000);
+  const p=decodeScannerPayload(j).pionex;
+  if(good(p))return {pionex:p,source:`TradingView Scanner ${TV_SYMBOL}`,ts:Date.now()};
+  throw Error('Pionex BTC quote absent from Scanner');
+ }catch(e){scanError=e;}
  try{
-  const j=await fetchTimeout('https://data-api.binance.vision/api/v3/ticker/price?symbol=BTCUSDT',{},9000);
-  if(!valid(+j.price))throw Error('Bad Binance ticker');
-  return {pionex:null,spot:+j.price,source:'Binance Spot backup',ts:Date.now(),warning:primaryErr?.message};
- }catch(e){throw Error(`即時行情無法讀取：${primaryErr?.message}; ${e.message}`);}
+  const j=await fetchJSON(`${WORKER}/api/monitor/tickers?type=PERP`,{},9000);
+  const r=(j.tickers||[]).find(x=>String(x.symbol||'').toUpperCase()===PIONEX_SYMBOL);
+  const p=Number(r?.price);
+  if(!good(p))throw Error('Pionex BTC_USDT_PERP quote absent');
+  return {pionex:p,source:'Worker Pionex PERP backup',ts:Date.now(),warning:scanError.message};
+ }catch(e){throw Error(`PIONEX 即時行情無法讀取：TV ${scanError.message}; Worker ${e.message}`);}
 }

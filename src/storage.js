@@ -1,4 +1,4 @@
-const NS='btc4h-breakout-v1';
+const NS='btc4h-breakout-v1.0.1-PIONEX';
 const inMemory=new Map();
 function read(key){
  try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):null;}catch{return inMemory.get(key)||null;}

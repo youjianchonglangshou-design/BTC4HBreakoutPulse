@@ -1,0 +1,20 @@
+BTC4HBreakoutPulse v1.0.1｜覆蓋檔案清單
+
+index.html
+README.md
+TEST_REPORT.md
+VERSION.json
+package.json
+src/app.js
+src/engine.js
+src/feeds.js
+src/structure.js
+src/storage.js
+src/tv_history.js    [NEW]
+src/labels.js        [NEW]
+tests/app.integration.test.mjs
+tests/feeds.test.mjs
+tests/engine.test.mjs
+tests/labels.test.mjs [NEW]
+
+原有 model/v6.json、model/rule.json、styles.css、chart.js、tab_title.js 等維持不變。

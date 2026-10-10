@@ -7,50 +7,65 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const file=p=>JSON.parse(fs.readFileSync(path.join(root,p),'utf8'));
 const fixture=file('tests/replay_20261005.fixture.json');
 function element(id=''){
- return {id,textContent:'',innerHTML:'',className:'',style:{},hidden:false,
-  children:[],append(...els){this.children.push(...els);},appendChild(el){this.children.push(el);return el;},replaceChildren(...els){this.children=els;},
-  setAttribute(){},getAttribute(){return null;},addEventListener(){}};
+ return {id,textContent:'',innerHTML:'',className:'',style:{},hidden:false,children:[],append(...els){this.children.push(...els);},appendChild(el){this.children.push(el);return el;},replaceChildren(...els){this.children=els;},setAttribute(){},getAttribute(){return null;},addEventListener(){}};
 }
-test('full browser entrypoint can hydrate quote/tab and 4H learned probability with mocked REST data',async()=>{
- const original={fetch:globalThis.fetch,DateNow:Date.now,setInterval:globalThis.setInterval,document:globalThis.document,localStorage:globalThis.localStorage};
+// The original BTCFLOWPulse uses WebSocket messages framed as ~m~{utf8 bytes}~m~{payload}.
+const frame=o=>{const json=JSON.stringify(o);return `~m~${new TextEncoder().encode(json).length}~m~${json}`;};
+class FakeWS{
+ static OPEN=1;static CONNECTING=0;
+ constructor(url){assert.match(url,/tv-chart-ws/);this.readyState=0;this.handlers={};setTimeout(()=>{this.readyState=1;this.emit('open',{});},1);}
+ addEventListener(name,cb){(this.handlers[name]??=[]).push(cb);}
+ emit(name,p){for(const fn of this.handlers[name]||[])fn(p);}
+ send(message){
+  const m=message.match(/^~m~\d+~m~([\s\S]+)$/);if(!m)return;
+  let msg;try{msg=JSON.parse(m[1]);}catch{return;}
+  if(msg.m==='resolve_symbol'){assert.match(String(msg.p?.[2]),/PIONEX:BTCUSDT\.P/);return;}
+  if(msg.m!=='create_series')return;
+  const [session,seriesId,_series,_symbol,resolution,limit]=msg.p;
+  const key=resolution==='240'?'fourHour':resolution==='15'?'fifteenMin':'daily';
+  const rows=fixture[key].slice(-limit).map(b=>({v:[b.ts/1000,b.open,b.high,b.low,b.close,1]}));
+  setTimeout(()=>{
+   if(this.readyState!==1)return;
+   this.emit('message',{data:frame({m:'timescale_update',p:[session,{[seriesId]:{s:rows}}]})});
+   this.emit('message',{data:frame({m:'series_completed',p:[session,seriesId]})});
+  },3);
+ }
+ close(){this.readyState=3;}
+}
+test('GitHub Pages entry loads Pionex chart 4H/15M/1D and Pionex quote; below midline language says 跌破',async()=>{
+ const original={fetch:globalThis.fetch,now:Date.now,setInterval:globalThis.setInterval,document:globalThis.document,localStorage:globalThis.localStorage,WebSocket:globalThis.WebSocket};
  const elements=new Map();
- globalThis.document={title:'BTC',hidden:false,
-  getElementById(id){if(!elements.has(id))elements.set(id,element(id));return elements.get(id);},
-  createElement(){return element();},createElementNS(){return element();},addEventListener(){}};
- const fakeNow=Date.parse('2026-10-05T11:55:00Z');
- Date.now=()=>fakeNow;
- globalThis.setInterval=()=>0;
+ globalThis.document={title:'BTC',hidden:false,getElementById(id){if(!elements.has(id))elements.set(id,element(id));return elements.get(id);},createElement(){return element();},createElementNS(){return element();},addEventListener(){}};
+ const fakeNow=Date.parse('2026-10-05T11:55:00Z');Date.now=()=>fakeNow;
+ globalThis.setInterval=()=>0;globalThis.WebSocket=FakeWS;
  globalThis.localStorage={getItem:()=>null,setItem:()=>{},length:0,key:()=>null};
+ const requests=[];
  globalThis.fetch=async(url)=>{
-  const u=new URL(url,'https://localhost/');
+  const u=new URL(url,'https://localhost/');requests.push(u.href);
   if(u.pathname.startsWith('/model/'))return {ok:true,json:async()=>file(u.pathname.slice(1))};
-  if(u.pathname.endsWith('/api/v3/klines')){
-   const it=u.searchParams.get('interval'),key=it==='4h'?'fourHour':it==='15m'?'fifteenMin':'daily';
-   const end=+(u.searchParams.get('endTime')||fakeNow),limit=+(u.searchParams.get('limit')||1000);
-   const rows=fixture[key].filter(b=>b.ts<=Math.min(end,fakeNow)).slice(-limit)
-     .map(b=>[b.ts,String(b.open),String(b.high),String(b.low),String(b.close),'1']);
-   return {ok:true,json:async()=>rows};
-  }
-  if(u.hostname==='scanner.tradingview.com')return {ok:true,json:async()=>({data:[
-   {s:'PIONEX:BTCUSDT.P',d:[86223.4]},{s:'BINANCE:BTCUSDT',d:[86216]}]})};
-  throw Error('unexpected network '+url);
+  if(u.hostname==='scanner.tradingview.com')return {ok:true,json:async()=>({data:[{s:'PIONEX:BTCUSDT.P',d:[86223.4]}]})};
+  throw Error('unexpected URL '+url);
  };
  try{
-  await import(`../src/app.js?int=${Math.random()}`);
-  for(let i=0;i<45;i++){
-   if(elements.get('probability')?.textContent?.includes('%')&&globalThis.document.title.includes('86,223.4'))break;
-   await new Promise(r=>setTimeout(r,35));
+  await import(`../src/app.js?test=${Math.random()}`);
+  for(let i=0;i<130;i++){
+   if(elements.get('probability')?.textContent?.match(/\d+\.\d%/)&&globalThis.document.title.includes('86,223.4'))break;
+   await new Promise(r=>setTimeout(r,30));
   }
   const p=elements.get('probability')?.textContent;
-  assert.match(p,/\d+\.\d%/,`probability: ${p}; error: ${elements.get('error')?.textContent}`);
+  assert.match(p,/\d+\.\d%/,`probability: ${p}; info: ${elements.get('explanation')?.textContent}; err:${elements.get('error')?.textContent}`);
   assert.equal(elements.get('livePrice').textContent,'86,223.4');
   assert.equal(globalThis.document.title,'BTC 86,223.4');
   assert.match(elements.get('midState').textContent,/中軌之/);
+  assert.match(elements.get('chartSource').textContent,/PIONEX/);
   assert.match(elements.get('freezeBadge').textContent,/動態/);
   assert.ok(elements.get('featureList').children.length>=3);
   assert.ok(elements.get('candles').children.length>=33);
- }finally{
-  globalThis.fetch=original.fetch;Date.now=original.DateNow;globalThis.setInterval=original.setInterval;
-  globalThis.document=original.document;globalThis.localStorage=original.localStorage;
- }
+  assert.ok(requests.every(u=>!u.includes('binance.vision')&&!u.includes('api.binance')));
+  if(elements.get('midState').textContent.includes('中軌之下')){
+   assert.match(elements.get('probName').textContent,/跌破/);
+   assert.equal(elements.get('heroVerb').textContent,'跌破');
+   assert.equal(elements.get('heroTarget').textContent,'底齊');
+  }
+ }finally{Object.assign(globalThis,{fetch:original.fetch,document:original.document,localStorage:original.localStorage,WebSocket:original.WebSocket,setInterval:original.setInterval});Date.now=original.now;}
 });

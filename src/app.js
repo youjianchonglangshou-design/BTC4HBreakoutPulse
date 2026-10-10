@@ -6,9 +6,10 @@ import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
 import {renderCandles4h} from './chart.js';
 import {updateBtcTabTitle} from './tab_title.js';
+import {getDirectionLabels} from './labels.js';
 const $=id=>document.getElementById(id);
 const S={fourHour:[],fifteenMin:[],daily:[],quotes:null,model:null,gate:null,
- historyUpdated:0,error:'',pollBusy:false,refreshBusy:false,initializing:true,lastPrediction:null};
+ historyUpdated:0,historySources:{},historyFetched:{},error:'',pollBusy:false,refreshBusy:false,initializing:true,lastPrediction:null};
 const fmt=(n,d=1)=>Number.isFinite(n)?n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
 const set=(id,str)=>{const e=$(id);if(e)e.textContent=String(str);};
 const countdown=ms=>[Math.floor(Math.max(0,ms)/3600000),Math.floor(Math.max(0,ms)%3600000/60000),Math.floor(Math.max(0,ms)%60000/1000)].map(x=>String(x).padStart(2,'0')).join(':');
@@ -23,15 +24,15 @@ async function loadModel(){
 async function loadHistory(initial=false){
  if(S.refreshBusy)return;S.refreshBusy=true;
  const tasks=initial?[
-  ['fourHour',()=>fetchKlines('4h',2500)],['fifteenMin',()=>fetchKlines('15m',300)],['daily',()=>fetchKlines('1d',240)]
+  ['fourHour',()=>fetchKlines('4h',2200)],['fifteenMin',()=>fetchKlines('15m',500)],['daily',()=>fetchKlines('1d',240)]
  ]:[
-  ['fourHour',()=>fetchLatestKlines('4h',30)],['fifteenMin',()=>fetchLatestKlines('15m',300)],['daily',()=>fetchLatestKlines('1d',240)]
+  ['fourHour',()=>fetchLatestKlines('4h',150)],['fifteenMin',()=>fetchLatestKlines('15m',500)],['daily',()=>fetchLatestKlines('1d',240)]
  ];
  const results=await Promise.allSettled(tasks.map(async([key,fn])=>({key,value:await fn()})));
  let failed=[];
  results.forEach((r,i)=>{
   if(r.status==='fulfilled'){
-   const {key,value}=r.value;S[key]=merge(S[key],value,key==='fourHour'?2700:key==='fifteenMin'?500:270);}
+   const {key,value}=r.value;S[key]=merge(S[key],value.bars,key==='fourHour'?2700:key==='fifteenMin'?550:300); S.historySources[key]=value.source; S.historyFetched[key]=Date.now();}
   else failed.push(`${tasks[i][0]}: ${r.reason?.message||r.reason}`);
  });
  S.historyUpdated=Date.now();S.refreshBusy=false;S.initializing=false;
@@ -42,14 +43,14 @@ async function pollQuote(){
  if(S.pollBusy)return;S.pollBusy=true;
  try{
   const q=await fetchQuotes();S.quotes=q;
-  const display=q.pionex??q.spot;
+  const display=q.pionex;
   if(display){updateBtcTabTitle(display);set('livePrice',fmt(display,1));}
-  set('quoteSource',q.pionex?'PIONEX 永續合約現價':'Binance 現貨備援價格');
-  set('connection',`10秒更新 · ${tpeClock(q.ts)}`);
+  set('quoteSource','PIONEX BTC_USDT_PERP · 10 秒');
+  set('connection',`派網 10秒更新 · ${tpeClock(q.ts)}`);
  }catch(e){set('connection','即時行情連線失敗 · 重試中');S.error=e.message;showError();}
  finally{S.pollBusy=false;render();}
 }
-function extractQuotePrice(){return S.quotes?.spot??null;}
+function extractQuotePrice(){return S.quotes?.pionex??null;}
 function createModelData(now){
  if(!S.model||!S.gate)return {status:'MODEL_LOADING',reason:'載入v6權重中'};
  return evaluate({fourHour:S.fourHour,fifteenMin:S.fifteenMin,daily:S.daily,
@@ -59,7 +60,7 @@ function freezeForDay(dayCut){
  if(!S.model||!S.gate||!S.fourHour.length||!S.fifteenMin.length||!S.daily.length)return null;
  // Do not freeze a cached 19:59 incomplete 15M or 4H bar as if it were the 20:00 close.
  // Seeing the first bar OPENING at/after the cutoff proves a post-cutoff historical refresh.
- if(!S.fifteenMin.some(b=>b.ts>=dayCut)||!S.fourHour.some(b=>b.ts>=dayCut))return {status:'FREEZE_WAIT_FOR_POST_CUTOFF_HISTORY'};
+ if(!S.historyFetched.fifteenMin||S.historyFetched.fifteenMin<dayCut)return {status:'FREEZE_WAIT_FOR_POST_CUTOFF_HISTORY'};
  const snapshot=freezeSnapshot({fourHour:S.fourHour,fifteenMin:S.fifteenMin,daily:S.daily,
   model:S.model,gate:S.gate,cut:dayCut});
  // NO_BARRIER is an honest immutable no-signal decision, not a forced score.
@@ -97,8 +98,8 @@ function renderArchive(){
  const tb=document.createElement('tbody');
  dates.forEach(date=>{
   const snap=getFrozen(date),settle=getSettlement(date),row=document.createElement('tr');
-  const cols=[date,snap.kind||'—',fmt(snap.line?.level,1),snap.status==='OK'?fmt(snap.prediction?.probability*100,1)+'%':'無有效關卡',fmt(settle?.close,1),
-    settle?.status==='SETTLED'?(settle.success?'有效突破':'未有效突破'):'待 00:00 驗證'];
+  const cols=[date,snap.kind?getDirectionLabels(snap.kind).target:'—',fmt(snap.line?.level,1),snap.status==='OK'?fmt(snap.prediction?.probability*100,1)+'%':'無有效關卡',fmt(settle?.close,1),
+    settle?.status==='SETTLED'?(settle.success?getDirectionLabels(snap.kind).success:getDirectionLabels(snap.kind).failure):'待 00:00 驗證'];
   cols.forEach((c,i)=>{const td=document.createElement('td');td.textContent=c;
    if(i===5&&settle?.status==='SETTLED')td.className=settle.success?'good':'bad';row.append(td);});tb.append(row);
  });t.append(tb);el.replaceChildren(t);
@@ -114,8 +115,9 @@ function renderLevels(pred,now){
  }
  // On frozen days the active target must remain the immutable 20:00 line.
  const target=pred?.line??null;
+ set('chartSource',S.historySources.fourHour?.includes('TradingView')?'PIONEX · TV 圖表':S.historySources.fourHour?.includes('Worker')?'PIONEX · Worker':'PIONEX · 載入中');
  renderCandles4h($('candles'),last,target);
- set('historyStatus',S.fourHour.length>=300?`${last.length} 根4H已收線`:'K線不足');
+ set('historyStatus',S.fourHour.length>=240?`${last.length} 根派網4H已收線`:'派網4H不足');
  set('lineConfirmed',target?tpeTime(target.confirmed):'—');
  set('touchCount',target?`${target.episodes} 回`:'—');
  set('crossCount',target?`${target.crossCount} 次`:'—');
@@ -130,6 +132,9 @@ function render(){
  let snap=pre?createModelData(now):getFrozen(window.date);
  if(!pre&&!snap)snap={status:'FREEZE_PENDING',reason:'20:00 已停止動態推算，正以20:00之前已收線的歷史K線重建快照'};
  const frozen=!pre;
+ const activeKind=snap?.kind??(snap?.daily?.above?'頂齊':snap?.daily?.above===false?'底齊':null);
+ const labels=getDirectionLabels(activeKind);
+ set('heroVerb',labels.verb);set('heroTarget',labels.object);
  $('freezeBadge').className=frozen?'chip frozen':'chip active';
  set('freezeBadge',frozen?'20:00 已凍結':'動態 · 10秒更新');
  set('freezeText',frozen?'預測關卡與機率鎖定；價格與瀏覽器頁籤仍每10秒更新。':'20:00 前持續推演；訓練只校準20:00時點，盤前機率屬實驗性。');
@@ -141,11 +146,11 @@ function render(){
  if(snap?.status==='OK'){
   S.lastPrediction=snap;
   const p=snap.prediction,percent=p.probability*100;
-  set('probName',snap.kind==='頂齊'?'4H 頂齊有效突破機率':'4H 底齊有效跌破機率');
+  set('probName',getDirectionLabels(snap.kind).title);
   set('probability',`${fmt(percent,1)}%`);
-  set('probInterpret',percent>=55?'突破能力較強':percent<=45?'突破能力偏弱':'接近中性');
+  set('probInterpret',percent>=55?getDirectionLabels(snap.kind).strong:percent<=45?getDirectionLabels(snap.kind).weak:'接近中性');
   $('meterFill').style.width=`${Math.min(100,Math.max(0,percent))}%`;
-  set('explanation',p.reason);
+  set('explanation',snap.kind==='底齊'?p.reason.replaceAll('突破','跌破').replaceAll('頂齊','底齊'):p.reason);
   setFeatureRows([
    ['預測目標',`${snap.kind} ${fmt(snap.line.level,1)}`],
    ['4H ATR（14）',fmt(snap.atr,1)],
@@ -156,7 +161,7 @@ function render(){
   ]);
   renderLevels(snap,frozen?snap.cut:now);
  }else{
-  set('probName',snap?.kind==='底齊'?'4H 底齊有效跌破機率':'4H 頂齊有效突破機率');
+  set('probName',getDirectionLabels(snap?.kind).title);
   set('probability','—');set('probInterpret','沒有可靠機率');$('meterFill').style.width='0%';
   set('explanation',snap?.reason||'正在讀取九年模型權重、4H及15M歷史與日線數據。');
   setFeatureRows([['狀態',snap?.status||'WAITING'],['原則','缺資料／無關卡時不猜測']]);

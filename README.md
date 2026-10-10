@@ -1,43 +1,33 @@
-# BTC 4H Breakout Pulse · v1.0.0
+# BTC 4H Breakout Pulse · v1.0.1（Pionex 行情修正版）
 
-**獨立 GitHub Pages 網站，不需要 GitHub Actions、不需要 Cloudflare Worker、不需要連線使用者電腦。**
+獨立 GitHub Pages 靜態專案，對應 `https://youjianchonglangshou-design.github.io/BTC4HBreakoutPulse/`。
 
-## 你要的運作方式
+## 本次最重要的修正
 
-- **行情**：TradingView Scanner 讀取 `PIONEX:BTCUSDT.P`，預設每 **10 秒**更新網頁價格與瀏覽器頁籤標題（`BTC 82,605.4` 形式）。如果 Pionex Scanner 不可用，顯示 Binance 現貨備援並明確標示；瀏覽器背景分頁可能限制更新頻率。
-- **模型行情**：v6.0 原本以 **Binance BTCUSDT SPOT** 九年歷史訓練，因此 4H/15M/1D 結構 K 線和計算用的 BTC 現價都使用 Binance 現貨，避免拿 Pionex 合約價格和 Binance 現貨關卡混算。TradingView Scanner 同次請求也讀 `BINANCE:BTCUSDT`，單獨失敗則嘗試 Binance 公開 REST 備援。
-- **方向切換**：日線 HA（平均K）收盤位於日線20期布林中軌 **之上**，觀察第一道已確認 4H **頂齊有效突破**；中軌 **之下**，觀察第一道已確認 4H **底齊有效跌破**。前者的成功判準是 00:00 4H 收盤 `> 頂齊×1.0001`；後者是 `＜底齊×0.9999`。
-- **4H 結構**：直接沿用 BTCFLOWPulse `flow.js` 定義的 4H「綠→紅／紅→綠，開盤／前收誤差 0.015%，1～3 根收線確認」。限制關卡年齡≤365日、前方距離≤3倍ATR、既往接觸回合≤8；找不到有效水平線就顯示無關卡，不編造機率。
-- **v6 機率**：直接移植九年研究的 v6.0 訓練權重。基礎邏輯包含關卡距離／方向；經研究選出的特殊條件「**頂齊＋20:00前兩小時的區間中心貼線**」會依原模型增加15個百分點。日線HA、中軌位置決定觀察方向；中軌斜率／HA黃紫顯示為背景，**不杜撰尚未獲驗證的額外權重**。
-- **盤前動態**：20:00 前，根據最新的 Binance 現貨報價、ATR、關卡狀態更新機率。報價 10秒輪詢，完整歷史K線約2分鐘同步（靠近20:00加快）。**注意：v6模型原始歷史機率只以20:00當下驗證；盤前每10秒推演並未獨立校準**。
-- **20:00 嚴格鎖定**：20:00 後價格／頁籤繼續輪詢，但預測值、方向、關卡、歷史特徵停止更新。利用已收線的 **08:00～20:00 48根15M K線**與最後已收線4H重建20:00快照；沒有足夠資料不冒用20:01以後的現價。只有在歷史服務返回20:00新K線，確認上根已收線後才鎖定；因此畫面可能稍晚幾秒顯示凍結結果，但截至時間固定是20:00。
-- **00:00 驗證**：以20:00開始、00:00結束的4H K線收盤評分。單機 `localStorage` 封存每天事前快照和驗證結果；原始機率不可事後覆寫。網頁關閉後再開啟，可在仍取得該時段完整歷史K線時重建；超過可讀資料範圍或服務故障時會明示未取得快照。
+**4H K 線、4H 頂齊／底齊、15M 貼線特徵、日線 20 日中軌、平均 K、00:00 結算，全都使用 Pionex `BTC_USDT_PERP`。** 畫面與瀏覽器頁籤 BTC 現價仍然每 10 秒查詢 `PIONEX:BTCUSDT.P`。不使用 Binance 歷史 K 線或即時價充作備援。
 
-## 新建 GitHub 儲存庫部署
+- 4H、15M、1D 歷史主通道：沿用原始 [BTCFLOWPulse](https://github.com/youjianchonglangshou-design/BTCFLOWPulse) 的 `TradingView chart WebSocket`（既有 `white-meadow-16bc` Worker 代理，URL `/api/monitor/tv-chart-ws`），其標的為 `PIONEX:BTCUSDT.P`。新的專案不需要另外部署 Worker；**但它確實依賴你已經在使用的既有 Worker**。
+- 歷史備援：既有 Worker `/api/monitor/klines?symbol=BTC_USDT_PERP&interval=4H|15M|1D`。如果備援只取得少量歷史，模型可顯示資料不足或找不到有效關卡；**絕不暗換 Binance**。
+- 現價主通道：TradingView Scanner；備援：既有 Worker `/api/monitor/tickers?type=PERP`。
+- **日線中軌之上** → 研究「**4H 頂齊有效突破機率**」，00:00 收盤須大於已鎖定頂齊×1.0001。
+- **日線中軌之下** → 研究「**4H 底齊有效跌破機率**」，00:00 收盤須小於已鎖定底齊×0.9999。標題、提示、歷史紀錄均使用「跌破」，不再用不精確的「突破結構」。
+- 價格與瀏覽器頁籤 10 秒更新；K 線歷史約每 2 分鐘更新。20:00 以前推演動態機率，20:00 用完整 Pionex 已收線 15M 重建並鎖定，00:00 用 Pionex 4H 收盤驗證。關閉網頁無背景任務；重新開啟需可讀到當時歷史才能重建。
+- 更換行情來源後，另開 v1.0.1 Pionex 凍結儲存區，**不把 v1.0.0 Binance 歷史預測誤當 Pionex 紀錄**。
 
-1. 在 GitHub 建立新的 **Public** repository，例如 `BTC4HBreakoutPulse`。
-2. 將本壓縮包**解壓縮**，把 `index.html`、`styles.css`、`src/`、`model/`、`.nojekyll` 等根目錄內容全部上傳到儲存庫 `main` 分支的最上層。**不要直接把 ZIP 當唯一檔案上傳。**
-3. 開啟 repository → **Settings → Pages** → **Build and deployment** → **Deploy from a branch** → `main` / `(root)` → Save。
-4. Pages 網址通常為 `https://<你的帳號>.github.io/<儲存庫名稱>/`。不需要設置 Secrets、建排程或部署 Worker。
+## 重要研究限制
 
-下載原始 ZIP 後，雙擊本機 `index.html` 的 `file://` 模式不能正常載入模組；請用 GitHub Pages 或以 HTTP 啟動。
+**v6.0 的概率參數仍是以 Binance 現貨九年歷史訓練，不是 Pionex 合約九年重訓。** 本次修正只確保即時圖、選線與推論所使用的行情一致，沒有憑空宣稱跨市場機率校準已完成。因此目前百分比是研究用機率估計，並非已驗證的 Pionex 合約歷史勝率。中軌斜率、平均 K 黃紫用於確認方向／顯示，尚無經認證的額外百分比加成。
 
-## 本機執行及測試
+## 更新已存在的 GitHub 儲存庫
 
-Node.js 18+，Python3（僅用於在本機啟動開發用靜態伺服器；GitHub Pages 端不需要）：
+把 `OVERWRITE_THESE.txt` 所列的檔案及資料夾按原路徑覆蓋到新儲存庫根目錄。若想一次更新，也可以直接將本 ZIP 內的全部檔案解壓後上傳。GitHub Pages 維持 `main` / `(root)`；無須 GitHub Actions 排程。
+
+## 測試
 
 ```bash
 npm test
 python3 -m http.server 8000
-# 開啟 http://localhost:8000
+# 瀏覽 http://localhost:8000/
 ```
 
-## 研究與部署限制
-
-- 本專案 **不是新增九年訓練**：它交付的是 v6.0 已訓練權重在新的即時網頁中的推論應用。訓練自 2017～2022、2023年調參，2024～2026 曾被多輪研究反覆檢視，不能聲稱全新獨立盲測或保證交易優勢。
-- **頂齊有效突破機率43%不等於做空獲利機率57%**。價格可能未能有效收破頂齊，但仍收綠、仍導致放空虧損；停損觸發也不反映在本模型。
-- 頁面資料來源為公開第三方 API，可能受到地區存取、CORS、限流或停機影響。發生錯誤時畫面保留警示或顯示無法產生機率；不使用假數據冒充即時行情。
-- **沒有跨裝置同步資料庫**。凍結紀錄儲存於瀏覽器 localStorage；不同裝置重新載入會盡可能利用近期公有歷史行情重建20:00快照，但較久以前的每日封存只有原裝置保存。要做到任意跨裝置長期同步，需要額外儲存服務，而本版依「從簡」原則不部署。
-- 公開歷史K線預設使用 Binance 的 `data-api.binance.vision` 與 `api.binance.com` 備援；只有在連線成功且資料足夠時才推算機率。Pionex Scanner 獨立顯示價可能和現貨價有差異。
-
-完整測試見 [TEST_REPORT.md](TEST_REPORT.md)，專案版本見 [VERSION.json](VERSION.json)。
+新增了 Pionex-only 同源測試、Worker 備援與 TradingView WebSocket 模擬整合測試、方向詞彙測試；v6.0 的 131 個機率公式對照案例保留。詳細見 `TEST_REPORT.md`。
