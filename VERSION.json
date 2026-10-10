@@ -1,12 +1,12 @@
 {
-  "app":"BTC 4H Breakout Pulse",
-  "version":"1.2.0",
-  "release":"2026-10-11",
-  "model":"v6.0",
-  "timeZone":"Asia/Taipei",
-  "freezeAt":"20:00",
-  "settleAt":"00:00",
-  "tabQuoteIntervalSeconds":10,
-  "deployment":"GitHub Pages static",
-  "focus":"Compact full-screen dashboard; 48-bar wider Pionex 4H chart; hover detail cards; probability far right; visible app version"
+  "app": "BTC 4H Breakout Pulse",
+  "version": "1.2.1",
+  "release": "2026-10-11",
+  "model": "v6.0",
+  "timeZone": "Asia/Taipei",
+  "freezeAt": "20:00",
+  "settleAt": "00:00",
+  "tabQuoteIntervalSeconds": 10,
+  "deployment": "GitHub Pages static",
+  "focus": "Semantic color palette: red resistance/top, green support/floor, SState 5-point regression slope, exact HA yellow/purple, 3 state pills, direction-aware probability"
 }

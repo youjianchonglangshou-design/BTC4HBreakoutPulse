@@ -123,7 +123,7 @@ export function renderCandles4h(svg,bars,target,opts={}){
  // The hover hit-region is intentionally drawn last, above the live quote graphics.
  let barrierHover = null;
  if(line){
-  const cy=g.y(line.level),color=line.kind==='底齊'?'#f39a9a':'#f1b66c';
+  const cy=g.y(line.level),color=line.kind==='底齊'?'#36d3a2':'#f27585';
   add('line',{x1:LEFT,x2:GUTTER,y1:cy,y2:cy,stroke:color,'stroke-width':1.9,'stroke-dasharray':'8 6',opacity:.94});
   add('circle',{cx:RIGHT,cy,r:3.4,fill:color});
   barrierHover={cy,color,kind:line.kind,level:line.level};
@@ -157,9 +157,9 @@ export function renderCandles4h(svg,bars,target,opts={}){
    if(!tooltip){
     tooltip=add('g',{'data-role':'barrier-tooltip','pointer-events':'none'});
     add('rect',{x:0,y:0,width:TOOLTIP_WIDTH,height:TOOLTIP_HEIGHT,rx:7,
-      fill:'#382b25',stroke:color,'stroke-width':1},tooltip);
+      fill:kind==='底齊'?'#102e28':'#38252f',stroke:color,'stroke-width':1},tooltip);
     label(`${kind} ${fmt(level)}`,{x:10,y:17,
-      fill:'#fff0d7','font-size':12.5,'font-weight':800},tooltip);
+      fill:kind==='底齊'?'#d8ffef':'#ffe5e7','font-size':12.5,'font-weight':800},tooltip);
    }
    tooltip.setAttribute('transform',`translate(${pos.x} ${pos.y})`);
    tooltip.setAttribute('data-tooltip-x',pos.x);

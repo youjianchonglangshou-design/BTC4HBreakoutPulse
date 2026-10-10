@@ -4,9 +4,10 @@ import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
 import {selectFirstBarrier} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.2.0';
+import {renderCandles4h} from './chart.js?v=1.2.1';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
+import {probabilityTone,contextTone} from './semantic.js';
 const $=id=>document.getElementById(id);
 const S={fourHour:[],fifteenMin:[],daily:[],quotes:null,model:null,gate:null,
  historyUpdated:0,historySources:{},historyFetched:{},error:'',pollBusy:false,refreshBusy:false,initializing:true,lastPrediction:null};
@@ -135,6 +136,16 @@ function renderLevels(pred,now){
  set('crossCount',target?`${target.crossCount} 次`:'—');
  set('distance',pred?.prediction?`${fmt(pred.prediction.distanceATR,3)} ATR`:'—');
 }
+function updatePalette(daily,kind,percent){
+ const ctx=contextTone(daily);
+ for(const [id,tone] of [['summaryMid',ctx.mid],['summarySlope',ctx.slope],['summaryHA',ctx.ha]]){
+  const elem=$(id);if(elem){elem.setAttribute('data-tone',tone);elem.parentElement?.setAttribute?.('data-tone',tone);}
+ }
+ const pTone=probabilityTone(kind,percent);
+ const card=document.querySelector?.('.prob-pane');
+ if(card)card.setAttribute('data-tone',pTone);
+ const prob=$('probability');if(prob)prob.setAttribute('data-tone',pTone);
+}
 function render(){
  const now=Date.now(),window=forecastWindow(now),pre=window.pre;
  set('clock',tpeClock(now));
@@ -153,7 +164,7 @@ function render(){
   set('slopeState',`${snap.daily.slopeLabel}（${fmt(snap.daily.slopePctPerDay,3)}%／日）`);
   set('haState',`${snap.daily.averageK}色 · HA ${fmt(snap.daily.haClose,1)}`);
   set('summaryMid',`${snap.daily.side} · ${fmt(snap.daily.midline,1)}`);
-  set('summarySlope',`${snap.daily.slopeLabel} · ${fmt(snap.daily.slopePctPerDay,3)}%/日`);
+  set('summarySlope',`${snap.daily.slopeSymbol||''}${snap.daily.slopeLabel} · ${fmt(snap.daily.slopePctPerDay,3)}%/日`);
   set('summaryHA',`${snap.daily.averageK}色 · ${fmt(snap.daily.haClose,1)}`);
  }else{
   for(const id of ['midState','summaryMid'])set(id,'資料不足');
@@ -174,12 +185,14 @@ function render(){
    ['基礎模型機率',`${fmt(p.baseline*100,1)}%`],
    ['中軌、HA','決定觀測方向／顯示背景，未虛構加分']
   ]);
+  updatePalette(snap.daily,snap.kind,percent);
   renderLevels(snap,now);
  }else{
   set('probName',getDirectionLabels(snap?.kind).title);
   set('probability','—');set('probInterpret','沒有可靠機率');
   set('explanation',snap?.reason||'正在讀取九年模型權重、4H及15M歷史與日線數據。');
   setFeatureRows([['狀態',snap?.status||'WAITING'],['原則','缺資料／無關卡時不猜測']]);
+  updatePalette(snap?.daily,snap?.kind,NaN);
   renderLevels(snap,now);
  }
  renderArchive();

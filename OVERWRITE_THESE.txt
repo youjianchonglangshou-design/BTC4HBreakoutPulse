@@ -1,5 +1,4 @@
-BTC4HBreakoutPulse v1.2.0
-將以下檔案依相對路徑覆蓋 GitHub 儲存庫 main 根目錄：
+BTC4HBreakoutPulse v1.2.1 需覆蓋或新增的檔案（保留路徑，上傳到 GitHub main 根目錄）
 
 index.html
 styles.css
@@ -10,9 +9,13 @@ TEST_REPORT.md
 OVERWRITE_THESE.txt
 src/app.js
 src/chart.js
+src/market.js
+src/semantic.js  ← 新增，不能漏掉，否則網頁無法啟動
+
 tests/app.integration.test.mjs
-tests/chart.test.mjs
 tests/layout_contract.test.mjs
+tests/color_semantics.test.mjs  ← 新增測試
+tests/color_visual_browser.py  ← 新增瀏覽器測試
 tests/compact_layout_browser.py
 
-不需改動 Worker、不需 GitHub Actions。GitHub Pages cache-busting 版本已同步修改。
+沒有更動其他機率、行情或 Worker 模組。不要把測試使用的模擬圖檔當作市場資料。

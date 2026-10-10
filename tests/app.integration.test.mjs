@@ -35,7 +35,7 @@ class FakeWS{
 test('GitHub Pages entry loads Pionex chart 4H/15M/1D and Pionex quote; below midline language says 跌破',async()=>{
  const original={fetch:globalThis.fetch,now:Date.now,setInterval:globalThis.setInterval,document:globalThis.document,localStorage:globalThis.localStorage,WebSocket:globalThis.WebSocket};
  const elements=new Map();
- globalThis.document={title:'BTC',hidden:false,getElementById(id){if(!elements.has(id))elements.set(id,element(id));return elements.get(id);},createElement(){return element();},createElementNS(){return element();},querySelectorAll(){return [];},addEventListener(){}};
+ globalThis.document={title:'BTC',hidden:false,getElementById(id){if(!elements.has(id))elements.set(id,element(id));return elements.get(id);},createElement(){return element();},createElementNS(){return element();},querySelector(sel){return sel==='.prob-pane'?this.getElementById('test-probability-panel'):null;},querySelectorAll(){return [];},addEventListener(){}};
  const fakeNow=Date.parse('2026-10-05T11:55:00Z');Date.now=()=>fakeNow;
  globalThis.setInterval=()=>0;globalThis.WebSocket=FakeWS;
  globalThis.localStorage={getItem:()=>null,setItem:()=>{},length:0,key:()=>null};
@@ -66,6 +66,15 @@ test('GitHub Pages entry loads Pionex chart 4H/15M/1D and Pionex quote; below mi
   assert.ok(elements.get('featureList').children.length>=3);
   assert.ok(elements.get('summaryMid').textContent.includes('中軌之'));
   assert.ok(elements.get('summaryHA').textContent.length>1);
+  // These are the real app render() DOM state changes, not just CSS source strings.
+  assert.ok(['yellow','purple'].includes(elements.get('summaryHA').attrs['data-tone']));
+  assert.ok(['above','below'].includes(elements.get('summaryMid').attrs['data-tone']));
+  assert.ok(['rising','flat','flattening','falling'].includes(elements.get('summarySlope').attrs['data-tone']));
+  const percent=Number.parseFloat(elements.get('probability').textContent);
+  const side=elements.get('summaryMid').attrs['data-tone'];
+  const expectedTone=percent===50?'neutral':side==='above'?(percent>50?'bull-strong':'bull-weak'):(percent>50?'bear-strong':'bear-weak');
+  assert.equal(elements.get('test-probability-panel').attrs['data-tone'],expectedTone);
+
   assert.ok(elements.get('candles').children.length>=33);
   assert.ok(requests.every(u=>!u.includes('binance.vision')&&!u.includes('api.binance')));
   if(elements.get('midState').textContent.includes('中軌之下')){

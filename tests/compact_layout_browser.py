@@ -41,7 +41,7 @@ with sync_playwright() as p:
  }''')
  assert page.locator('.chart-subnote').count()==0
  assert page.locator('.meter').count()==0
- assert page.locator('.version-mark').inner_text()=='v1.2.0'
+ assert page.locator('.version-mark').inner_text()=='v1.2.1'
  assert page.locator('#candles text').filter(has_text='NOW 82,966.0').count()==1
  assert page.locator('#candles text').filter(has_text='底齊 82,560.0').count()==0
  dims=page.evaluate('''()=>({scrollH:document.documentElement.scrollHeight,innerH:innerHeight,scrollW:document.documentElement.scrollWidth,innerW:innerWidth,chart:document.querySelector('.chart-pane').getBoundingClientRect().height,bar:document.querySelector('.decision-ribbon').getBoundingClientRect().height})''')
@@ -50,7 +50,7 @@ with sync_playwright() as p:
  assert dims['scrollH']<=dims['innerH']+5,'Desktop vertical scroll (collapsed archive)'
  assert page.locator('.prob-pane').bounding_box()['x']>page.locator('.quick-facts').bounding_box()['x']
  assert page.locator('#probability').inner_text()=='25.6%'
- page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.0_DESKTOP.png',full_page=True)
+ page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.1_DESKTOP.png',full_page=True)
  # Hover/tap details open in overlay without increasing document scroll-height.
  for target in ('.top-quick','.floor-quick','.market-quick'):
   page.locator(target).hover()
@@ -60,7 +60,7 @@ with sync_playwright() as p:
   assert h<=dims['innerH']+5,f'{target} popover unexpectedly extends document'
   if target=='.market-quick':
    assert panel.get_by_text('模型判斷',exact=False).count()>0
-   page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.0_HOVER_CONTEXT.png',full_page=True)
+   page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.1_HOVER_CONTEXT.png',full_page=True)
   page.mouse.move(1510,800)
   assert not panel.is_visible(),target+' did not hide on pointer leave'
  # Re-run chart-level tooltip check.
@@ -79,7 +79,7 @@ with sync_playwright() as p:
  # mobile: controls stack, no horizontal scroll; tapping opens/closes details.
  mobile_ctx=browser.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True,device_scale_factor=1)
  mobile=mobile_ctx.new_page();mobile.set_content(html,wait_until='load');mobile.add_style_tag(content=css)
- mobile.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.0_MOBILE.png',full_page=True)
+ mobile.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.1_MOBILE.png',full_page=True)
  assert mobile.evaluate('document.documentElement.scrollWidth<=innerWidth+1'), 'Mobile overflow'
  mobile.add_script_tag(content=(root/'src/app.js').read_text().split('// Summary cards behave like TennisRatio rating panels:')[1].join([]) if False else '// Summary cards behave like TennisRatio rating panels:'+ (root/'src/app.js').read_text().split('// Summary cards behave like TennisRatio rating panels:')[1])
  mobile.locator('.floor-quick').tap()

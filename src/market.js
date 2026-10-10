@@ -14,6 +14,33 @@ export function atr14(rows,asOf=Infinity){
  }
  return xs.reduce((a,b)=>a+b,0)/xs.length;
 }
+/** SStateMarketTerminal monitor-engine.js: five-point linear regression of the
+ * 20-day Bollinger midline, compared with the previous five-point regression.
+ * This is a display feature; v6.0 probability weights remain unchanged. */
+export function midlineSlopeRegime(mids){
+ const slopePctPerDay=raw=>{
+  const vals=raw.map(Number);
+  if(vals.length<2 || !vals.every(Number.isFinite))return 0;
+  const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+  if(Math.abs(mean)<1e-18)return 0;
+  const xm=(vals.length-1)/2;
+  let den=0,top=0;
+  for(let i=0;i<vals.length;i++){
+   den+=(i-xm)**2;
+   top+=(i-xm)*(vals[i]-mean);
+  }
+  return den>0?(top/den)/Math.abs(mean)*100:0;
+ };
+ const recent=mids.slice(-5),prior=mids.length>=10?mids.slice(-10,-5):mids.slice(0,-5);
+ const recentSlope=slopePctPerDay(recent);
+ const previousSlope=prior.length>=2?slopePctPerDay(prior):recentSlope;
+ const improvement=recentSlope-previousSlope;
+ if(recentSlope>=0.12)return {state:'rising',label:'上斜',symbol:'↑',value:recentSlope,previousSlope,improvement};
+ if(recentSlope>-.25)return {state:'flat',label:'平緩',symbol:'→',value:recentSlope,previousSlope,improvement};
+ if(recentSlope>=-.65 && improvement>=.12)return {state:'flattening',label:'下降走平中',symbol:'↘',value:recentSlope,previousSlope,improvement};
+ return {state:'falling',label:'下斜',symbol:'↓',value:recentSlope,previousSlope,improvement};
+}
+
 export function dailySignal(input,now=Date.now(),override=null){
  let bars=normalizeBars(input),start=Math.floor(now/DAY)*DAY;
  bars=bars.filter(b=>b.ts<=start);
@@ -35,16 +62,11 @@ export function dailySignal(input,now=Date.now(),override=null){
  }
  const latest=ha.at(-1),mid=mids.at(-1);
  if(!(mid>0))return null;
- const slope=(mids.at(-1)/mids.at(-2)-1)*100;
- // Simple mean 5-day midline slope (for display, not a learned v6 factor).
- const vals=mids.slice(-6);const slope5=vals.length===6&&vals.every(Number.isFinite)?
-  100*vals.slice(1).reduce((s,x,i)=>s+(x/vals[i]-1),0)/5:slope;
- const prev=mids.slice(-11,-6);
- const prevSlope=prev.length===5&&prev.every(Number.isFinite)?100*prev.slice(1).reduce((s,x,i)=>s+(x/prev[i]-1),0)/4:0;
- const isRising=slope5>=0.12,flat=slope5>-.25;
- const slopeLabel=isRising?'上斜':flat?'走平':slope5>=-.65&&slope5-prevSlope>=.12?'下降走平中':'下斜';
+ const regime=midlineSlopeRegime(mids.filter(Number.isFinite));
  return {averageK:latest.close>=latest.open?'黃':'紫',haClose:latest.close,haOpen:latest.open,midline:mid,
-   above:latest.close>=mid,side:latest.close>=mid?'中軌之上':'中軌之下',slopePctPerDay:slope5,slopeLabel,
+   above:latest.close>=mid,side:latest.close>=mid?'中軌之上':'中軌之下',
+   slopePctPerDay:regime.value,slopeLabel:regime.label,slopeState:regime.state,slopeSymbol:regime.symbol,
+   slopeImprovementPct:regime.improvement,
    midDistancePct:(latest.close/mid-1)*100,barTime:bars.at(-1).ts};
 }
 export function buildPartialDaily(bars15,cut){
