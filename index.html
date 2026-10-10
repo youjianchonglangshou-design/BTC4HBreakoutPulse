@@ -5,30 +5,31 @@
 <meta name="description" content="BTC Pionex 4H 頂齊突破、底齊跌破預測：20:00 前動態，20:00 凍結。">
 <meta name="theme-color" content="#071321">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=1.1.0">
+<link rel="stylesheet" href="styles.css?v=1.1.1">
 <title>BTC</title>
 </head>
 <body>
 <div class="page">
-<header class="topbar">
-  <a class="brand" href="./" aria-label="BTC 4H BREAKOUT 首頁"><span class="mark">B<span>4</span></span><span><strong>BTC 4H BREAKOUT</strong><small>FLOW 結構突破預測 · v1.1.0</small></span></a>
-  <div class="topstat"><small>台灣時間</small><strong id="clock">--:--:--</strong></div>
-  <div class="live"><span class="pulse-dot"></span><span id="connection">連接派網報價中</span></div>
-</header>
-<section class="hero">
-  <div><span class="eyebrow">PIONEX PERP · 4H STRUCTURE · 20:00 → 00:00 TPE</span>
-    <h1>下一根 4H，能否<span id="heroVerb">突破</span><span id="heroTarget">頂齊</span>？</h1>
-    <p>20:00 前動態預測 · 20:00 同時鎖定關卡與機率 · 00:00 驗證</p>
+<header class="topbar compact-topbar">
+  <div class="top-pills" aria-label="狀態膠囊">
+    <div class="status-pill countdown-pill"><span>預測時段倒數</span><strong id="countdown">--:--:--</strong></div>
+    <div class="status-pill live-pill"><span class="pulse-dot"></span><strong id="connection">派網 10秒更新 · --:--:--</strong></div>
   </div>
-  <div class="hero-stat"><small>預測時段倒數</small><strong id="countdown">--:--:--</strong><span id="phaseText">等待行情</span></div>
-</section>
+</header>
 <div id="error" class="error" role="status" hidden></div>
-<main class="market-stage">
+<main class="market-stage compact-stage">
   <section class="pane chart-pane" aria-label="主要 Pionex 4H K 線圖">
-    <div class="section-title"><div><small>LIVE 4H · STRUCTURE + PRICE</small><h2>派網 4H K 線｜頂齊・底齊・即時價格</h2></div><span class="chip" id="historyStatus">載入歷史</span></div>
+    <div class="section-title minimal-title">
+      <div>
+        <small>LIVE 4H · STRUCTURE + PRICE</small>
+        <h2>派網 4H K 線｜頂齊・底齊・即時價格</h2>
+        <p class="chart-subnote" id="phaseText">20:00 前動態預測 · 20:00 同時鎖定關卡與機率 · 00:00 驗證</p>
+      </div>
+    </div>
     <div class="chart-frame">
       <div class="chart-title"><strong>PIONEX:BTCUSDT.P · 最近 40 根 4H</strong><span id="chartSource">PIONEX · 載入中</span></div>
       <svg id="candles" viewBox="0 0 1200 460" role="img" aria-label="派網4H K線、頂齊底齊水平虛線、即時價格與呼吸光點"></svg>
+      <span class="chip chart-history-chip" id="historyStatus">載入歷史</span>
       <div class="chart-legend"><span><i class="legend-live"></i> 即時價格（每 10 秒）</span><span><i class="legend-target"></i> 當次預測目標</span><span><i class="legend-candle"></i> LIVE 4H 僅供看盤，不參與已確認結構選線</span></div>
     </div>
   </section>
@@ -54,6 +55,6 @@
 <section class="below pane"><div class="section-title"><div><small>FORECAST ARCHIVE</small><h2>20:00 凍結與 00:00 驗證紀錄</h2></div><span class="chip" id="archiveCount">本裝置紀錄</span></div><div id="archive" class="archive"><p class="micro">尚無凍結紀錄。</p></div></section>
 <footer>圖表、結構、日線與報價採用 Pionex BTC_USDT_PERP；頁籤顯示最新派網報價。v6.0 權重由 Binance 現貨歷史訓練，派網資料尚待重校準。20:00 以後圖表／報價繼續更新，當次機率及目標關卡不會更改。靜態 GitHub Pages 不跨裝置同步快照。</footer>
 </div>
-<script type="module" src="src/app.js?v=1.1.0"></script>
+<script type="module" src="src/app.js?v=1.1.1"></script>
 </body>
 </html>

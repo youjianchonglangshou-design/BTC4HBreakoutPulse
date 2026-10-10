@@ -1,14 +1,9 @@
-BTC4HBreakoutPulse v1.1.0 - 覆蓋至 GitHub 倉庫根目錄
-====================================================
-index.html
-styles.css
-src/chart.js
-src/app.js
-VERSION.json
-package.json
-README.md
-TEST_REPORT.md
-OVERWRITE_THESE.txt
+請以本壓縮包內檔案覆蓋原 BTC4HBreakoutPulse 儲存庫相同路徑檔案：
 
-建議一次覆蓋以上 9 個檔案。model/、其他 src/ 及測試資料不必動。
-這次改的是版面與即時 4H 價格圖，不重訓 v6 模型，也不更改原本的 Pionex 取價/20:00 凍結行為。
+- index.html
+- styles.css
+- src/app.js
+- VERSION.json
+- package.json
+- README.md
+- TEST_REPORT.md

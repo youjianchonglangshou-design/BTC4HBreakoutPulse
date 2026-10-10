@@ -4,7 +4,7 @@ import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
 import {selectFirstBarrier} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.1.0';
+import {renderCandles4h} from './chart.js?v=1.1.1';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 const $=id=>document.getElementById(id);
@@ -134,7 +134,7 @@ function render(){
  const now=Date.now(),window=forecastWindow(now),pre=window.pre;
  set('clock',tpeClock(now));
  set('countdown',pre?countdown(window.cut-now):now<window.end?countdown(window.end-now):'00:00:00');
- set('phaseText',pre?'距離20:00凍結':'20:00機率已鎖定｜倒數00:00');
+ set('phaseText',pre?'20:00 前動態預測 · 20:00 同時鎖定關卡與機率 · 00:00 驗證':'20:00 機率已鎖定 · 價格與圖表持續更新 · 00:00 驗證');
  maybeFreezeAndSettle(now);
  let snap=pre?createModelData(now):getFrozen(window.date);
  if(!pre&&!snap)snap={status:'FREEZE_PENDING',reason:'20:00 已停止動態推算，正以20:00之前已收線的歷史K線重建快照'};

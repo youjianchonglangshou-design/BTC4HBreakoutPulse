@@ -1,6 +1,6 @@
 {
   "app": "BTC 4H Breakout Pulse",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "release": "2026-10-10",
   "model": "v6.0",
   "timeZone": "Asia/Taipei",
@@ -8,5 +8,5 @@
   "settleAt": "00:00",
   "tabQuoteIntervalSeconds": 10,
   "deployment": "GitHub Pages static",
-  "focus": "Pionex 4H large live chart with in-chart 10s price label, dashed line and breathing orb; compact probability; supporting detail below"
+  "focus": "Simplified top layout; same-spec countdown/live capsules; history count moved to bottom-right of chart; large Pionex 4H chart with in-chart 10s price label"
 }
