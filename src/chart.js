@@ -87,7 +87,9 @@ export function renderCandles4h(svg,bars,target,opts={}){
   if(i===0||i===data.length-1||i%6===0)label(tpe(b.ts),{x,y:BOTTOM+26,fill:b.forming?'#5bddb8':'#7f9db7','font-size':11,'text-anchor':'middle'});
   if(b.forming)label('LIVE',{x,y:TOP-9,fill:'#65ecc2','font-size':11,'font-weight':800,'text-anchor':'middle'});
  });
- // Selected barrier is a locked 20:00 line after freeze; draw separately from live quote.
+ // Frozen barrier remains visible as a dashed line, but NO label is created by default.
+ // The hover hit-region is intentionally drawn last, above the live quote graphics.
+ let barrierHover = null;
  if(line){
   const cy=g.y(line.level),color=line.kind==='底齊'?'#f39a9a':'#f1b66c';
   add('line',{x1:LEFT,x2:GUTTER,y1:cy,y2:cy,stroke:color,'stroke-width':1.9,'stroke-dasharray':'8 6',opacity:.94});
@@ -96,8 +98,7 @@ export function renderCandles4h(svg,bars,target,opts={}){
   if(price!==null&&Math.abs(cy-g.y(price))<39){
    tagY=cy<g.y(price)?Math.max(TOP+7,tagY-27):Math.min(BOTTOM-29,tagY+27);
   }
-  add('rect',{x:GUTTER+8,y:tagY,width:155,height:28,rx:7,fill:'#382b25',stroke:color,'stroke-width':1});
-  label(`${line.kind} ${fmt(line.level)}`,{x:GUTTER+17,y:tagY+19,fill:'#fff0d7','font-size':14,'font-weight':800});
+  barrierHover={cy,color,tagY,kind:line.kind,level:line.level};
  }
  // Cyan live line + breathing orb + dedicated label replace former header quote.
  if(price!==null){
@@ -110,5 +111,30 @@ export function renderCandles4h(svg,bars,target,opts={}){
   add('animate',{attributeName:'r',values:'4;6;4',dur:'1.8s',repeatCount:'indefinite'},orb);
   add('rect',{x:GUTTER+11,y:tagY,width:156,height:30,rx:8,fill:'#0b3444',stroke:'#26d9e9','stroke-width':1.6});
   label(`NOW ${fmt(price)}`,{x:GUTTER+19,y:tagY+20,fill:'#eeffff','font-size':14.5,'font-weight':850});
+ }
+ // A transparent wide stroke catches mouse/pointer movements along the dashed level.
+ // Tooltip nodes are CREATED ON HOVER and REMOVED ON LEAVE; the persistent SVG
+ // can therefore never show a level badge when the mouse is not on the level.
+ if(barrierHover){
+  const {cy,color,tagY,kind,level}=barrierHover;
+  const hit=add('line',{
+   x1:LEFT,x2:GUTTER,y1:cy,y2:cy,stroke:'transparent','stroke-width':18,
+   'pointer-events':'stroke',cursor:'crosshair','data-role':'barrier-hover-hit',
+   tabindex:0,'aria-label':`${kind} ${fmt(level)}，滑鼠移到此水平線顯示價格`
+  });
+  let tooltip=null;
+  const show=()=>{
+   if(tooltip)return;
+   tooltip=add('g',{'data-role':'barrier-tooltip','pointer-events':'none'});
+   add('rect',{x:GUTTER+8,y:tagY,width:155,height:28,rx:7,
+    fill:'#382b25',stroke:color,'stroke-width':1},tooltip);
+   label(`${kind} ${fmt(level)}`,{x:GUTTER+17,y:tagY+19,
+    fill:'#fff0d7','font-size':14,'font-weight':800},tooltip);
+  };
+  const hide=()=>{if(tooltip){tooltip.remove();tooltip=null;}};
+  hit.addEventListener('pointerenter',show);
+  hit.addEventListener('pointerleave',hide);
+  hit.addEventListener('focus',show);
+  hit.addEventListener('blur',hide);
  }
 }
