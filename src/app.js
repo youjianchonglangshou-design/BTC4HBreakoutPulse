@@ -4,7 +4,7 @@ import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
 import {selectFirstBarrier} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js';
+import {renderCandles4h} from './chart.js?v=1.1.0';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 const $=id=>document.getElementById(id);
@@ -14,6 +14,7 @@ const fmt=(n,d=1)=>Number.isFinite(n)?n.toLocaleString('en-US',{minimumFractionD
 const set=(id,str)=>{const e=$(id);if(e)e.textContent=String(str);};
 const countdown=ms=>[Math.floor(Math.max(0,ms)/3600000),Math.floor(Math.max(0,ms)%3600000/60000),Math.floor(Math.max(0,ms)%60000/1000)].map(x=>String(x).padStart(2,'0')).join(':');
 const ONE_HOUR=3600000;
+const FOUR_HOURS=4*ONE_HOUR;
 function merge(old,rows,max=2700){return [...new Map([...old,...rows].map(r=>[r.ts,r])).values()].sort((a,b)=>a.ts-b.ts).slice(-max);}
 function showError(){const el=$('error');el.hidden=!S.error;if(S.error)el.textContent=S.error;}
 async function loadModel(){
@@ -44,7 +45,7 @@ async function pollQuote(){
  try{
   const q=await fetchQuotes();S.quotes=q;
   const display=q.pionex;
-  if(display){updateBtcTabTitle(display);set('livePrice',fmt(display,1));}
+  if(display){updateBtcTabTitle(display);}
   set('quoteSource','PIONEX BTC_USDT_PERP · 10 秒');
   set('connection',`派網 10秒更新 · ${tpeClock(q.ts)}`);
  }catch(e){set('connection','即時行情連線失敗 · 重試中');S.error=e.message;showError();}
@@ -105,10 +106,13 @@ function renderArchive(){
  });t.append(tb);el.replaceChildren(t);
 }
 function renderLevels(pred,now){
- const last=S.fourHour.filter(b=>b.ts+4*ONE_HOUR<=now);
- const price=pred?.price??extractQuotePrice(),atr=pred?.atr??atr14(last,now);
- const top=Number.isFinite(price)&&atr>0?selectFirstBarrier(last,now,price,atr,'頂齊',{maxAgeDays:365,maxDistanceATR:3,maxTouches:8}):null;
- const floor=Number.isFinite(price)&&atr>0?selectFirstBarrier(last,now,price,atr,'底齊',{maxAgeDays:365,maxDistanceATR:3,maxTouches:8}):null;
+ // Frozen forecast selects immutable 20:00 levels, while the CHART continues to today.
+ const selectionTime=pred?.cut??now;
+ const confirmedAtDecision=S.fourHour.filter(b=>b.ts+FOUR_HOURS<=selectionTime);
+ const last=S.fourHour.filter(b=>b.ts+FOUR_HOURS<=now);
+ const price=pred?.price??extractQuotePrice(),atr=pred?.atr??atr14(confirmedAtDecision,selectionTime);
+ const top=Number.isFinite(price)&&atr>0?selectFirstBarrier(confirmedAtDecision,selectionTime,price,atr,'頂齊',{maxAgeDays:365,maxDistanceATR:3,maxTouches:8}):null;
+ const floor=Number.isFinite(price)&&atr>0?selectFirstBarrier(confirmedAtDecision,selectionTime,price,atr,'底齊',{maxAgeDays:365,maxDistanceATR:3,maxTouches:8}):null;
  for(const [id,line] of [['top',top],['floor',floor]]){
   set(id==='top'?'topLevel':'floorLevel',line?fmt(line.level,1):'尚無有效關卡');
   set(id==='top'?'topDetail':'floorDetail',line?`確認 ${tpeTime(line.confirmed)} · 測試 ${line.episodes} 回`:'不強制選用過期舊線');
@@ -116,7 +120,10 @@ function renderLevels(pred,now){
  // On frozen days the active target must remain the immutable 20:00 line.
  const target=pred?.line??null;
  set('chartSource',S.historySources.fourHour?.includes('TradingView')?'PIONEX · TV 圖表':S.historySources.fourHour?.includes('Worker')?'PIONEX · Worker':'PIONEX · 載入中');
- renderCandles4h($('candles'),last,target);
+ // The forming Pionex 4H candle and 10-second quote affect only the chart.
+ // Confirmed barriers, history, and frozen forecast never use this forming candle.
+ const liveBar=S.fourHour.find(b=>b.ts<=Date.now()&&b.ts+FOUR_HOURS>Date.now())||null;
+ renderCandles4h($('candles'),last,target,{currentPrice:extractQuotePrice(),liveBar,now:Date.now()});
  set('historyStatus',S.fourHour.length>=240?`${last.length} 根派網4H已收線`:'派網4H不足');
  set('lineConfirmed',target?tpeTime(target.confirmed):'—');
  set('touchCount',target?`${target.episodes} 回`:'—');
@@ -159,13 +166,13 @@ function render(){
    ['基礎模型機率',`${fmt(p.baseline*100,1)}%`],
    ['中軌、HA','決定觀測方向／顯示背景，未虛構加分']
   ]);
-  renderLevels(snap,frozen?snap.cut:now);
+  renderLevels(snap,now);
  }else{
   set('probName',getDirectionLabels(snap?.kind).title);
   set('probability','—');set('probInterpret','沒有可靠機率');$('meterFill').style.width='0%';
   set('explanation',snap?.reason||'正在讀取九年模型權重、4H及15M歷史與日線數據。');
   setFeatureRows([['狀態',snap?.status||'WAITING'],['原則','缺資料／無關卡時不猜測']]);
-  renderLevels(snap,frozen?(snap.cut||now):now);
+  renderLevels(snap,now);
  }
  renderArchive();
 }

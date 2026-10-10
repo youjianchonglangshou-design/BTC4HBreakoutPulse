@@ -1,20 +1,14 @@
-BTC4HBreakoutPulse v1.0.1｜覆蓋檔案清單
-
+BTC4HBreakoutPulse v1.1.0 - 覆蓋至 GitHub 倉庫根目錄
+====================================================
 index.html
-README.md
-TEST_REPORT.md
+styles.css
+src/chart.js
+src/app.js
 VERSION.json
 package.json
-src/app.js
-src/engine.js
-src/feeds.js
-src/structure.js
-src/storage.js
-src/tv_history.js    [NEW]
-src/labels.js        [NEW]
-tests/app.integration.test.mjs
-tests/feeds.test.mjs
-tests/engine.test.mjs
-tests/labels.test.mjs [NEW]
+README.md
+TEST_REPORT.md
+OVERWRITE_THESE.txt
 
-原有 model/v6.json、model/rule.json、styles.css、chart.js、tab_title.js 等維持不變。
+建議一次覆蓋以上 9 個檔案。model/、其他 src/ 及測試資料不必動。
+這次改的是版面與即時 4H 價格圖，不重訓 v6 模型，也不更改原本的 Pionex 取價/20:00 凍結行為。

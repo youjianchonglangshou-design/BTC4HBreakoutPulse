@@ -1,30 +1,114 @@
 import {normalizeBars} from './market.js';
-export function renderCandles4h(svg,bars,line){
- const data=normalizeBars(bars).slice(-32);
- if(data.length<2){svg.replaceChildren();return;}
- const width=850,height=240,pad=20;
- const all=[...data.map(b=>b.high),...data.map(b=>b.low)];
- if(line&&Number.isFinite(line.level))all.push(line.level);
- const min=Math.min(...all),max=Math.max(...all),range=Math.max(1,max-min);
- const y=v=>height-pad-(v-min)/range*(height-2*pad);
- const dx=(width-2*pad)/data.length;
- const ns='http://www.w3.org/2000/svg';
- svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
- svg.replaceChildren();
- function el(tag,props){const e=document.createElementNS(ns,tag);Object.entries(props).forEach(([k,v])=>e.setAttribute(k,String(v)));svg.appendChild(e);return e;}
- for(let i=0;i<5;i++){
-  const yy=pad+(height-2*pad)*i/4;
-  el('line',{x1:0,y1:yy,x2:width,y2:yy,stroke:'#273a55','stroke-dasharray':'3 5','stroke-width':0.8});
+
+/** Pionex-only presentation. Current unfinished 4H is DISPLAY ONLY, never an alignment confirmation. */
+const W=1200,H=460,LEFT=79,RIGHT=1006,TOP=27,BOTTOM=405,GUTTER=1024;
+const OHLC_MS=4*3600_000;
+const cache=new WeakMap();
+const ns='http://www.w3.org/2000/svg';
+const fmt=v=>Number(v).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+const tpe=ts=>{
+ const d=new Date(ts+8*3600_000);
+ return `${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')} ${String(d.getUTCHours()).padStart(2,'0')}:00`;
+};
+const positive=n=>Number.isFinite(n)&&n>0;
+
+export function buildVisibleCandles(confirmed,now,unfinished=null,livePrice=null){
+ const closed=normalizeBars(confirmed).filter(b=>b.ts+OHLC_MS<=now).slice(-40);
+ // The TV Pionex live 4H candle must begin no later than now and must not be confirmed.
+ const candidate=unfinished&&unfinished.ts<=now&&unfinished.ts+OHLC_MS>now?unfinished:null;
+ let live=null;
+ if(candidate){
+  const quote=positive(livePrice)?livePrice:candidate.close;
+  live={...candidate,close:quote,high:Math.max(candidate.high,quote),low:Math.min(candidate.low,quote),forming:true};
  }
+ return [...closed,...(live?[live]:[])].slice(-40);
+}
+
+/** Pure geometry helper tested independent of browser/svg. */
+export function chartGeometry(candles,line,currentPrice){
+ const nums=[];
+ for(const b of candles){nums.push(b.high,b.low);}
+ if(positive(line?.level))nums.push(line.level);
+ if(positive(currentPrice))nums.push(currentPrice);
+ const min=Math.min(...nums),max=Math.max(...nums);
+ if(!Number.isFinite(min)||!Number.isFinite(max))return null;
+ const s=Math.max(1,max-min),low=min-s*0.085,high=max+s*0.085;
+ const y=v=>BOTTOM-(v-low)/(high-low)*(BOTTOM-TOP);
+ const dx=(RIGHT-LEFT)/Math.max(1,candles.length);
+ return {low,high,dx,y};
+}
+
+/** Large market chart, full-width with old BTCFLOWPulse-style price marker in the right gutter. */
+export function renderCandles4h(svg,bars,target,opts={}){
+ const now=opts.now??Date.now();
+ const price=positive(opts.currentPrice)?opts.currentPrice:null;
+ const data=buildVisibleCandles(bars,now,opts.liveBar,price);
+ const line=target&&positive(target.level)?target:null;
+ const signature=[data.length,...data.slice(-2).flatMap(b=>[b.ts,b.open,b.high,b.low,b.close]),line?.level,line?.kind,price].join('|');
+ if(cache.get(svg)===signature)return;
+ cache.set(svg,signature);
+ svg.replaceChildren();
+ svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+ if(data.length<2)return;
+ const g=chartGeometry(data,line,price);
+ if(!g)return;
+ const add=(name,attrs={},parent=svg)=>{
+  const e=document.createElementNS(ns,name);
+  Object.entries(attrs).forEach(([key,val])=>e.setAttribute(key,String(val)));
+  parent.appendChild(e);return e;
+ };
+ const label=(text,attrs={},parent=svg)=>{const e=add('text',attrs,parent);e.textContent=text;return e;};
+ const defs=add('defs');
+ const glow=add('filter',{id:'price-pulse-glow',x:'-250%',y:'-250%',width:'500%',height:'500%'},defs);
+ add('feGaussianBlur',{stdDeviation:'5'},glow);
+ add('rect',{x:RIGHT+13,y:TOP-9,width:W-RIGHT-18,height:BOTTOM-TOP+18,rx:10,fill:'#071725'});
+ add('line',{x1:RIGHT+7,x2:RIGHT+7,y1:TOP-10,y2:BOTTOM+10,stroke:'#30526a','stroke-width':1,'stroke-dasharray':'4 6'});
+ // price grids and scales
+ for(let i=0;i<6;i++){
+  const v=g.high-(g.high-g.low)*i/5,yy=g.y(v);
+  add('line',{x1:LEFT,y1:yy,x2:RIGHT,y2:yy,stroke:'#244057','stroke-width':1,'stroke-dasharray':'3 7',opacity:.75});
+  label(fmt(v),{x:LEFT-10,y:yy+4,fill:'#7d98b4','font-size':12,'text-anchor':'end'});
+ }
+ for(let i=0;i<=8;i++){
+  const x=LEFT+(RIGHT-LEFT)*i/8;
+  add('line',{x1:x,y1:TOP,x2:x,y2:BOTTOM,stroke:'#1b344c','stroke-width':1,opacity:.6});
+ }
+ label('PIONEX PERP · 4H',{x:GUTTER+10,y:18,fill:'#82a0b8','font-size':11,'font-weight':700});
+ // candles. Real-time quote can change the current candle's display; confirmed history is untouched.
+ const bodyW=Math.max(5,Math.min(22,g.dx*.60));
  data.forEach((b,i)=>{
-  const x=pad+(i+0.5)*dx,col=b.close>=b.open?'#18bd91':'#f07082';
-  el('line',{x1:x,y1:y(b.high),x2:x,y2:y(b.low),stroke:col,'stroke-width':1.6});
-  el('rect',{x:x-dx*0.31,y:Math.min(y(b.close),y(b.open)),width:dx*.62,height:Math.max(1.5,Math.abs(y(b.close)-y(b.open))),fill:col,rx:1.4});
+  const x=LEFT+(i+.5)*g.dx,col=b.close>=b.open?'#20c79c':'#f17a86',p=add('g');
+  const title=add('title',{},p);title.textContent=`${tpe(b.ts)} TPE${b.forming?' · LIVE':''}  O ${fmt(b.open)}  H ${fmt(b.high)}  L ${fmt(b.low)}  C ${fmt(b.close)}`;
+  if(b.forming)add('rect',{x:x-g.dx*.46,y:TOP,width:g.dx*.92,height:BOTTOM-TOP,fill:'#1c685e',opacity:.14,rx:3},p);
+  add('line',{x1:x,x2:x,y1:g.y(b.high),y2:g.y(b.low),stroke:col,'stroke-width':Math.max(1.4,bodyW*.10)},p);
+  add('rect',{x:x-bodyW/2,y:Math.min(g.y(b.open),g.y(b.close)),width:bodyW,
+   height:Math.max(2,Math.abs(g.y(b.open)-g.y(b.close))),fill:col,rx:1.5,
+   stroke:b.forming?'#dcfff1':col,'stroke-width':b.forming?1.5:0},p);
+  if(i===0||i===data.length-1||i%6===0)label(tpe(b.ts),{x,y:BOTTOM+26,fill:b.forming?'#5bddb8':'#7f9db7','font-size':11,'text-anchor':'middle'});
+  if(b.forming)label('LIVE',{x,y:TOP-9,fill:'#65ecc2','font-size':11,'font-weight':800,'text-anchor':'middle'});
  });
- if(line?.level){
-  const yy=y(line.level);
-  el('line',{x1:4,x2:width,y1:yy,y2:yy,stroke:'#f0ad58','stroke-width':1.9,'stroke-dasharray':'6 4'});
-  const label=el('text',{x:width-5,y:Math.max(12,yy-6),fill:'#f0bd73','font-size':15,'text-anchor':'end','font-weight':700});
-  label.textContent=`${line.kind} ${line.level.toLocaleString('en-US',{maximumFractionDigits:1})}`;
+ // Selected barrier is a locked 20:00 line after freeze; draw separately from live quote.
+ if(line){
+  const cy=g.y(line.level),color=line.kind==='底齊'?'#f39a9a':'#f1b66c';
+  add('line',{x1:LEFT,x2:GUTTER,y1:cy,y2:cy,stroke:color,'stroke-width':1.9,'stroke-dasharray':'8 6',opacity:.94});
+  add('circle',{cx:RIGHT,cy,r:3.4,fill:color});
+  let tagY=Math.min(BOTTOM-29,Math.max(TOP+7,cy-15));
+  if(price!==null&&Math.abs(cy-g.y(price))<39){
+   tagY=cy<g.y(price)?Math.max(TOP+7,tagY-27):Math.min(BOTTOM-29,tagY+27);
+  }
+  add('rect',{x:GUTTER+8,y:tagY,width:155,height:28,rx:7,fill:'#382b25',stroke:color,'stroke-width':1});
+  label(`${line.kind} ${fmt(line.level)}`,{x:GUTTER+17,y:tagY+19,fill:'#fff0d7','font-size':14,'font-weight':800});
+ }
+ // Cyan live line + breathing orb + dedicated label replace former header quote.
+ if(price!==null){
+  const cy=g.y(price),tagY=Math.min(BOTTOM-30,Math.max(TOP+7,cy-16));
+  add('line',{x1:LEFT,x2:GUTTER+5,y1:cy,y2:cy,stroke:'#23d7ee','stroke-width':1.5,'stroke-dasharray':'8 7',opacity:.9});
+  const halo=add('circle',{cx:GUTTER+3,cy,r:10,fill:'#24dcef',opacity:.34,filter:'url(#price-pulse-glow)'});
+  add('animate',{attributeName:'r',values:'7;15;7',dur:'1.8s',repeatCount:'indefinite'},halo);
+  add('animate',{attributeName:'opacity',values:'.45;.12;.45',dur:'1.8s',repeatCount:'indefinite'},halo);
+  const orb=add('circle',{cx:GUTTER+3,cy,r:4.5,fill:'#efffff',stroke:'#28e0f0','stroke-width':2});
+  add('animate',{attributeName:'r',values:'4;6;4',dur:'1.8s',repeatCount:'indefinite'},orb);
+  add('rect',{x:GUTTER+11,y:tagY,width:156,height:30,rx:8,fill:'#0b3444',stroke:'#26d9e9','stroke-width':1.6});
+  label(`NOW ${fmt(price)}`,{x:GUTTER+19,y:tagY+20,fill:'#eeffff','font-size':14.5,'font-weight':850});
  }
 }
