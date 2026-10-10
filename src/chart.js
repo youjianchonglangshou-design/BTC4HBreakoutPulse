@@ -4,6 +4,7 @@ import {normalizeBars} from './market.js';
 const W=1200,H=460,LEFT=79,RIGHT=1006,TOP=27,BOTTOM=405,GUTTER=1024;
 const OHLC_MS=4*3600_000;
 const cache=new WeakMap();
+const hoverState=new WeakMap();
 const ns='http://www.w3.org/2000/svg';
 const fmt=v=>Number(v).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
 const tpe=ts=>{
@@ -11,6 +12,37 @@ const tpe=ts=>{
  return `${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')} ${String(d.getUTCHours()).padStart(2,'0')}:00`;
 };
 const positive=n=>Number.isFinite(n)&&n>0;
+const clamp=(n,lo,hi)=>Math.max(lo,Math.min(hi,n));
+const TOOLTIP_WIDTH=158,TOOLTIP_HEIGHT=29;
+/** Convert browser pointer coordinates to SVG viewBox coordinates, including responsive scaling. */
+export function pointerSvgPosition(svg,event){
+ if(Number.isFinite(event?.svgX))return {x:event.svgX,y:event.svgY??0};
+ if(Number.isFinite(event?.clientX)&&Number.isFinite(event?.clientY)){
+  const matrix=svg.getScreenCTM?.();
+  if(matrix&&typeof matrix.inverse==='function'&&typeof svg.createSVGPoint==='function'){
+   const point=svg.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
+   const result=point.matrixTransform(matrix.inverse());
+   if(Number.isFinite(result.x)&&Number.isFinite(result.y))return {x:result.x,y:result.y};
+  }
+  const rect=svg.getBoundingClientRect?.();
+  if(rect&&rect.width>0&&rect.height>0){
+   const scale=Math.min(rect.width/W,rect.height/H);
+   const offsetX=(rect.width-W*scale)/2;
+   const offsetY=(rect.height-H*scale)/2;
+   return {x:(event.clientX-rect.left-offsetX)/scale,y:(event.clientY-rect.top-offsetY)/scale};
+  }
+ }
+ return {x:(LEFT+RIGHT)/2,y:0}; // keyboard focus / synthetic event
+}
+/** Cursor-following label stays INSIDE the candle plot, never inside the NOW price gutter. */
+export function hoverTooltipGeometry(pointerX,lineY){
+ const x=clamp(pointerX-TOOLTIP_WIDTH/2,LEFT+8,RIGHT-TOOLTIP_WIDTH-10);
+ const y=lineY-TOOLTIP_HEIGHT-12<TOP+3
+   ?clamp(lineY+12,TOP+3,BOTTOM-TOOLTIP_HEIGHT-4)
+   :clamp(lineY-TOOLTIP_HEIGHT-12,TOP+3,BOTTOM-TOOLTIP_HEIGHT-4);
+ return {x,y,width:TOOLTIP_WIDTH,height:TOOLTIP_HEIGHT};
+}
+
 
 export function buildVisibleCandles(confirmed,now,unfinished=null,livePrice=null){
  const closed=normalizeBars(confirmed).filter(b=>b.ts+OHLC_MS<=now).slice(-40);
@@ -94,11 +126,7 @@ export function renderCandles4h(svg,bars,target,opts={}){
   const cy=g.y(line.level),color=line.kind==='底齊'?'#f39a9a':'#f1b66c';
   add('line',{x1:LEFT,x2:GUTTER,y1:cy,y2:cy,stroke:color,'stroke-width':1.9,'stroke-dasharray':'8 6',opacity:.94});
   add('circle',{cx:RIGHT,cy,r:3.4,fill:color});
-  let tagY=Math.min(BOTTOM-29,Math.max(TOP+7,cy-15));
-  if(price!==null&&Math.abs(cy-g.y(price))<39){
-   tagY=cy<g.y(price)?Math.max(TOP+7,tagY-27):Math.min(BOTTOM-29,tagY+27);
-  }
-  barrierHover={cy,color,tagY,kind:line.kind,level:line.level};
+  barrierHover={cy,color,kind:line.kind,level:line.level};
  }
  // Cyan live line + breathing orb + dedicated label replace former header quote.
  if(price!==null){
@@ -112,29 +140,50 @@ export function renderCandles4h(svg,bars,target,opts={}){
   add('rect',{x:GUTTER+11,y:tagY,width:156,height:30,rx:8,fill:'#0b3444',stroke:'#26d9e9','stroke-width':1.6});
   label(`NOW ${fmt(price)}`,{x:GUTTER+19,y:tagY+20,fill:'#eeffff','font-size':14.5,'font-weight':850});
  }
- // A transparent wide stroke catches mouse/pointer movements along the dashed level.
- // Tooltip nodes are CREATED ON HOVER and REMOVED ON LEAVE; the persistent SVG
- // can therefore never show a level badge when the mouse is not on the level.
+ // Hover zone is drawn over the dashed line; the label follows the POINTER X,
+ // never a fixed right-edge position. It stays entirely inside the candle plot.
  if(barrierHover){
-  const {cy,color,tagY,kind,level}=barrierHover;
+  const {cy,color,kind,level}=barrierHover;
   const hit=add('line',{
-   x1:LEFT,x2:GUTTER,y1:cy,y2:cy,stroke:'transparent','stroke-width':18,
+   x1:LEFT,x2:RIGHT,y1:cy,y2:cy,stroke:'transparent','stroke-width':19,
    'pointer-events':'stroke',cursor:'crosshair','data-role':'barrier-hover-hit',
    tabindex:0,'aria-label':`${kind} ${fmt(level)}，滑鼠移到此水平線顯示價格`
   });
   let tooltip=null;
-  const show=()=>{
-   if(tooltip)return;
-   tooltip=add('g',{'data-role':'barrier-tooltip','pointer-events':'none'});
-   add('rect',{x:GUTTER+8,y:tagY,width:155,height:28,rx:7,
-    fill:'#382b25',stroke:color,'stroke-width':1},tooltip);
-   label(`${kind} ${fmt(level)}`,{x:GUTTER+17,y:tagY+19,
-    fill:'#fff0d7','font-size':14,'font-weight':800},tooltip);
+  const state=hoverState.get(svg)||{active:false,x:(LEFT+RIGHT)/2,y:cy,kind,level};
+  hoverState.set(svg,state);
+  const place=(x)=>{
+   const pos=hoverTooltipGeometry(x,cy);
+   if(!tooltip){
+    tooltip=add('g',{'data-role':'barrier-tooltip','pointer-events':'none'});
+    add('rect',{x:0,y:0,width:TOOLTIP_WIDTH,height:TOOLTIP_HEIGHT,rx:7,
+      fill:'#382b25',stroke:color,'stroke-width':1},tooltip);
+    label(`${kind} ${fmt(level)}`,{x:10,y:20,
+      fill:'#fff0d7','font-size':14,'font-weight':800},tooltip);
+   }
+   tooltip.setAttribute('transform',`translate(${pos.x} ${pos.y})`);
+   tooltip.setAttribute('data-tooltip-x',pos.x);
+   tooltip.setAttribute('data-tooltip-y',pos.y);
   };
-  const hide=()=>{if(tooltip){tooltip.remove();tooltip=null;}};
+  const show=(event)=>{
+   const pt=pointerSvgPosition(svg,event);
+   state.active=true;state.x=pt.x;state.y=pt.y;state.kind=kind;state.level=level;
+   place(pt.x);
+  };
+  const hide=()=>{state.active=false;if(tooltip){tooltip.remove();tooltip=null;}};
   hit.addEventListener('pointerenter',show);
+  hit.addEventListener('pointermove',show);
   hit.addEventListener('pointerleave',hide);
-  hit.addEventListener('focus',show);
+  hit.addEventListener('focus',()=>show({svgX:state.x,svgY:cy}));
   hit.addEventListener('blur',hide);
+  // A 10-second price redraw must NOT make the label jump back to the right.
+  // Restore it at the same cursor location only if the pointer still sits on the line.
+  if(state.active&&state.kind===kind&&state.level===level&&Math.abs(state.y-cy)<=11){
+   place(state.x);
+  }else{
+   state.active=false;
+  }
+ }else{
+  const state=hoverState.get(svg);if(state)state.active=false;
  }
 }

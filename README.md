@@ -1,4 +1,4 @@
-# BTC 4H Breakout Pulse · v1.1.3（Pionex 4H 大圖／價格呼吸光版）
+# BTC 4H Breakout Pulse · v1.1.4（Pionex 4H 大圖／價格呼吸光版）
 
 獨立 GitHub Pages 靜態專案，對應 `https://youjianchonglangshou-design.github.io/BTC4HBreakoutPulse/`。
 
@@ -58,3 +58,12 @@ python3 -m http.server 8000
 - 滑鼠進入水平虛線的 18px 感應範圍才建立標籤，移出即移除，亦支援鍵盤焦點。
 - NOW 即時價格標籤維持常駐，每 10 秒行情與凍結邏輯不變。
 - 瀏覽器改版檔案路徑帶 v1.1.3，避免載入舊版快取。
+
+
+## v1.1.4 游標跟隨標籤定位修復
+
+- 只有滑鼠滑過水平虛線才建立頂齊／底齊標籤，離開立即刪除。
+- 標籤根據滑鼠在 SVG 的真實座標跟隨左右移動；不再固定在右側價籤區。
+- 限制標籤在 K 線繪圖區內，避免與右側 `NOW` 即時價格標籤重疊（即使兩個價位完全相同）。
+- 10 秒價格更新導致圖重畫時，游標仍在虛線上的標籤保留原位置。
+- 專門增加 Node DOM 幾何測試及 Chromium 滑鼠左／中／右跟隨驗證。

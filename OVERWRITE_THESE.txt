@@ -1,12 +1,3 @@
-BTC4HBreakoutPulse v1.1.3 需要覆蓋的檔案（保留以下相對路徑）：
-index.html
-styles.css
-src/app.js
-src/chart.js
-VERSION.json
-package.json
-README.md
-TEST_REPORT.md
-tests/chart.test.mjs
-tests/barrier_hover_browser.py
-OVERWRITE_THESE.txt
+BTC4HBreakoutPulse v1.1.4：請依照壓縮包內的相對路徑覆蓋到現有 GitHub 儲存庫根目錄。
+必須覆蓋：index.html、src/app.js、src/chart.js。
+其他檔案：VERSION.json、package.json、README.md、TEST_REPORT.md、tests/chart.test.mjs、tests/barrier_cursor_browser.py（版本與測試記錄）。
