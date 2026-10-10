@@ -38,7 +38,7 @@ export function scanHistoricalAlignments(input,asOf,config={}){
     for(let j=i+1;j<=Math.min(bars.length-1,i+maxc);j++){
       const b=bars[j];if(b.ts!==s.ts+(j-i)*14400000)break;
       if((top&&b.close<s.low)||(floor&&b.close>s.high)){
-        events.push({id:`${s.ts}-${top?'T':'F'}`,kind:top?'頂齊':'底齊',level:s.close,formed:s.ts,confirmed:b.ts+14400000,start:j+1});break;
+        events.push({id:`${s.ts}-${top?'T':'F'}`,kind:top?'頂齊':'底齊',level:s.close,formed:s.ts,turnTs:turn.ts,confirmed:b.ts+14400000,start:j+1});break;
       }
     }
   }

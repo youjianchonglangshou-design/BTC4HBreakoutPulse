@@ -70,13 +70,41 @@ export function chartGeometry(candles,line,currentPrice){
  return {low,high,dx,y};
 }
 
+/** Turn marker belongs to the 1st opposite-color K candle in an alignment pair,
+ * NOT the 2nd/3rd confirming candle. Markers become visible ONLY AFTER confirmation.
+ * This function is pure and is used in deterministic tests.
+ */
+export function turnMarkerGeometry(visible,events,asOf,g=chartGeometry(visible,null,null)){
+ if(!g)return [];
+ const index=new Map(visible.map((bar,i)=>[bar.ts,i]));
+ const positions=[];
+ for(const ev of events||[]){
+  if(!['頂齊','底齊'].includes(ev.kind)||!Number.isFinite(ev.confirmed)||ev.confirmed>asOf)continue;
+  const turnTs=ev.turnTs??ev.formed+OHLC_MS;
+  const i=index.get(turnTs),j=index.get(ev.formed);
+  if(i===undefined||j===undefined||i!==j+1)continue;
+  const source=visible[j],turn=visible[i];
+  if(source.forming||turn.forming)continue;
+  const high=Math.max(source.high,turn.high),low=Math.min(source.low,turn.low);
+  // draw a 16px red crown ABOVE the turning pair or green bowl BELOW it;
+  // avoid clipping at the chart top/bottom while remaining above/below the wick.
+  const x=LEFT+(i+.5)*g.dx;
+  const top=ev.kind==='頂齊';
+  const y=top?clamp(g.y(high)-15,TOP+17,BOTTOM-12):clamp(g.y(low)+15,TOP+12,BOTTOM-17);
+  positions.push({id:ev.id,kind:ev.kind,level:ev.level,formed:ev.formed,
+   turnTs,confirmed:ev.confirmed,x,y});
+ }
+ return positions;
+}
+
 /** Large market chart, full-width with old BTCFLOWPulse-style price marker in the right gutter. */
 export function renderCandles4h(svg,bars,target,opts={}){
  const now=opts.now??Date.now();
  const price=positive(opts.currentPrice)?opts.currentPrice:null;
  const data=buildVisibleCandles(bars,now,opts.liveBar,price);
  const line=target&&positive(target.level)?target:null;
- const signature=[data.length,...data.slice(-2).flatMap(b=>[b.ts,b.open,b.high,b.low,b.close]),line?.level,line?.kind,price].join('|');
+ const markerEvents=opts.pivots||[];
+ const signature=[data.length,...data.slice(-2).flatMap(b=>[b.ts,b.open,b.high,b.low,b.close]),line?.level,line?.kind,price,markerEvents.map(x=>x.id+':'+x.confirmed).join(',')].join('|');
  if(cache.get(svg)===signature)return;
  cache.set(svg,signature);
  svg.replaceChildren();
@@ -119,6 +147,25 @@ export function renderCandles4h(svg,bars,target,opts={}){
   if(i===0||i===data.length-1||i%6===0)label(tpe(b.ts),{x,y:BOTTOM+26,fill:b.forming?'#5bddb8':'#7f9db7','font-size':9.7,'text-anchor':'middle'});
   if(b.forming)label('LIVE',{x,y:TOP-9,fill:'#65ecc2','font-size':11,'font-weight':800,'text-anchor':'middle'});
  });
+ // Confirmed historical TOP/FLOOR turns: mark the actual red/green reversal pair.
+ // Red arch = 4H TOP resistance; green bowl = 4H FLOOR support.
+ // The 1–3-bar delayed confirmation only controls WHEN the marker becomes visible,
+ // NEVER WHERE it is drawn (position = turnTs, not confirmed).
+ for(const pivot of turnMarkerGeometry(data,markerEvents,now,g)){
+  const top=pivot.kind==='頂齊',stroke=top?'#f27585':'#36d3a2';
+  const {x,y}=pivot;
+  const path=top
+   ?`M ${x-10} ${y+4} Q ${x} ${y-12} ${x+10} ${y+4}`
+   :`M ${x-10} ${y-4} Q ${x} ${y+12} ${x+10} ${y-4}`;
+  const group=add('g',{'data-role':'alignment-turn-marker',
+   'data-kind':pivot.kind,'data-turn-ts':pivot.turnTs,
+   'data-formed-ts':pivot.formed,'data-confirmed-ts':pivot.confirmed,
+   'data-x':x,'data-y':y,'aria-label':`${pivot.kind}轉折標記：${fmt(pivot.level)}`});
+  add('title',{},group).textContent=`${pivot.kind} ${fmt(pivot.level)}｜轉折 ${tpe(pivot.turnTs)}｜確認 ${tpe(pivot.confirmed)}`;
+  add('path',{d:path,stroke,fill:'none','stroke-width':3.1,'stroke-linecap':'round',
+   'stroke-linejoin':'round','pointer-events':'none'},group);
+  add('circle',{cx:x,cy:top?y-2:y+2,r:2.3,fill:stroke,'pointer-events':'none'},group);
+ }
  // Frozen barrier remains visible as a dashed line, but NO label is created by default.
  // The hover hit-region is intentionally drawn last, above the live quote graphics.
  let barrierHover = null;

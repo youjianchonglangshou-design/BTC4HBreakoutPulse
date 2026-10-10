@@ -1,16 +1,16 @@
 import {fetchKlines,fetchLatestKlines,fetchQuotes} from './feeds.js';
 import {normalizeBars,atr14} from './market.js';
 import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
-import {selectFirstBarrier} from './structure.js';
+import {selectFirstBarrier,scanHistoricalAlignments} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.2.1';
+import {renderCandles4h} from './chart.js?v=1.2.2';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 import {probabilityTone,contextTone} from './semantic.js';
 const $=id=>document.getElementById(id);
 const S={fourHour:[],fifteenMin:[],daily:[],quotes:null,model:null,gate:null,
- historyUpdated:0,historySources:{},historyFetched:{},error:'',pollBusy:false,refreshBusy:false,initializing:true,lastPrediction:null};
+ historyUpdated:0,historySources:{},historyFetched:{},pivotCache:null,error:'',pollBusy:false,refreshBusy:false,initializing:true,lastPrediction:null};
 const fmt=(n,d=1)=>Number.isFinite(n)?n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
 const set=(id,str)=>{const e=$(id);if(e)e.textContent=String(str);};
 const countdown=ms=>[Math.floor(Math.max(0,ms)/3600000),Math.floor(Math.max(0,ms)%3600000/60000),Math.floor(Math.max(0,ms)%60000/1000)].map(x=>String(x).padStart(2,'0')).join(':');
@@ -129,7 +129,14 @@ function renderLevels(pred,now){
  // The forming Pionex 4H candle and 10-second quote affect only the chart.
  // Confirmed barriers, history, and frozen forecast never use this forming candle.
  const liveBar=S.fourHour.find(b=>b.ts<=Date.now()&&b.ts+FOUR_HOURS>Date.now())||null;
- renderCandles4h($('candles'),last,target,{currentPrice:extractQuotePrice(),liveBar,now:Date.now()});
+ // The chart can show every CONFIRMED historical 4H turn in its visible 48-bar window.
+ // Keep the turn's original timestamp; confirmation may occur one to three candles later.
+ const pivotKey=`${S.historyFetched.fourHour||0}|${last.length}|${last.at(-1)?.ts??0}`;
+ if(S.pivotCache?.key!==pivotKey){
+  const events=scanHistoricalAlignments(last,now).events;
+  S.pivotCache={key:pivotKey,events};
+ }
+ renderCandles4h($('candles'),last,target,{currentPrice:extractQuotePrice(),liveBar,now, pivots:S.pivotCache.events});
  set('historyStatus',S.fourHour.length>=240?`${last.length} 根派網4H已收線`:'派網4H不足');
  set('lineConfirmed',target?tpeTime(target.confirmed):'—');
  set('touchCount',target?`${target.episodes} 回`:'—');

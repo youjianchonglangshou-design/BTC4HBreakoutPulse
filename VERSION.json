@@ -1,6 +1,6 @@
 {
   "app": "BTC 4H Breakout Pulse",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "release": "2026-10-11",
   "model": "v6.0",
   "timeZone": "Asia/Taipei",
@@ -8,5 +8,5 @@
   "settleAt": "00:00",
   "tabQuoteIntervalSeconds": 10,
   "deployment": "GitHub Pages static",
-  "focus": "Semantic color palette: red resistance/top, green support/floor, SState 5-point regression slope, exact HA yellow/purple, 3 state pills, direction-aware probability"
+  "focus": "Pionex 4H confirmed top/floor turnaround markers drawn at first reversal K, never at later confirmation K; red top, green floor"
 }

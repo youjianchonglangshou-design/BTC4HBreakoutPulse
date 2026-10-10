@@ -91,3 +91,60 @@ test('hover tooltip tracks pointer X in chart coordinates and NEVER occupies the
   assert.ok(hoverTooltipGeometry(1100,200).x+136<1070);
  }finally{globalThis.document=prev;}
 });
+
+// New pivot-marking contract: appearance requires completed confirmation, but x must
+// be tied to the ORIGINAL opposite-color turning bar rather than to confirming K.
+import {scanHistoricalAlignments} from '../src/structure.js';
+import {turnMarkerGeometry} from '../src/chart.js';
+test('pivot markers use first opposite-color turn bar, even if wick-break confirms at 3rd K',()=>{
+ const base=Date.parse('2026-10-09T00:00:00Z');
+ const ohlc=[
+  [100,112,96,110],    // 0 green source -> red turn 1: 頂齊 level 110
+  [110,115,100,108],   // 1 red: initial turning K (mark HERE)
+  [108,111,101,106],   // 2 red: close 106 not through green low 96
+  [106,109,93,95],     // 3 red: close 95 < source low 96 (confirm after 3)
+  [95,99,88,90],       // 4 red source -> green turn 5: 底齊 level 90
+  [90,94,86,92],       // 5 green: initial turning K (mark HERE)
+  [92,100,90,99],      // 6 green: close 99 == red high 99, not confirm
+  [99,108,94,101],     // 7 green: close 101 > red high 99 (confirm after 3)
+  [101,109,99,105]     // 8 green
+ ];
+ const bars=ohlc.map(([open,high,low,close],i)=>({ts:base+i*FOUR,open,high,low,close}));
+ const beforeConfirm=base+3*FOUR;
+ assert.equal(scanHistoricalAlignments(bars,beforeConfirm).events.length,0,'do not show any unconfirmed events');
+ const cutoff=base+bars.length*FOUR;
+ const {events}=scanHistoricalAlignments(bars,cutoff);
+ assert.equal(events.length,2,'one top and one floor confirmed');
+ const top=events.find(e=>e.kind==='頂齊'),floor=events.find(e=>e.kind==='底齊');
+ assert.equal(top.formed,bars[0].ts);
+ assert.equal(top.turnTs,bars[1].ts);
+ assert.equal(top.confirmed,bars[3].ts+FOUR);
+ assert.equal(floor.formed,bars[4].ts);
+ assert.equal(floor.turnTs,bars[5].ts);
+ assert.equal(floor.confirmed,bars[7].ts+FOUR);
+ const pts=turnMarkerGeometry(bars,events,cutoff);
+ assert.deepEqual(pts.map(p=>p.turnTs),[bars[1].ts,bars[5].ts]);
+ assert.deepEqual(pts.map(p=>p.kind),['頂齊','底齊']);
+ assert.notEqual(pts[0].turnTs,top.confirmed);
+ assert.notEqual(pts[1].turnTs,floor.confirmed);
+ // No future confirmation data at an earlier asOf, even if future events mistakenly passed.
+ assert.equal(turnMarkerGeometry(bars,events,base+3*FOUR).length,0);
+ const previous=globalThis.document;globalThis.document={createElementNS(_ns,t){return node(t);}};
+ try{
+  const svg=node();
+  renderCandles4h(svg,bars,{kind:'頂齊',level:110},{now:cutoff,currentPrice:104,pivots:events});
+  const nodes=flatten(svg),marks=nodes.filter(el=>el.attrs['data-role']==='alignment-turn-marker');
+  assert.equal(marks.length,2);
+  assert.equal(marks[0].attrs['data-turn-ts'],String(bars[1].ts));
+  assert.equal(marks[1].attrs['data-turn-ts'],String(bars[5].ts));
+  assert.equal(marks[0].children.find(x=>x.tag==='path').attrs.stroke,'#f27585');
+  assert.equal(marks[1].children.find(x=>x.tag==='path').attrs.stroke,'#36d3a2');
+  const previewPath=svg.children[0];
+  renderCandles4h(svg,bars,{kind:'頂齊',level:110},{now:cutoff,currentPrice:104,pivots:events});
+  assert.equal(svg.children[0],previewPath,'without change chart is not needlessly redrawn');
+  const nextSvg=node();
+  renderCandles4h(nextSvg,bars,null,{now:base+3*FOUR,currentPrice:104,pivots:events});
+  assert.equal(flatten(nextSvg).filter(el=>el.attrs['data-role']==='alignment-turn-marker').length,0,
+    'no retroactive confirmed marker before it was confirmed');
+ }finally{globalThis.document=previous;}
+});
