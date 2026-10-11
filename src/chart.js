@@ -161,7 +161,7 @@ export function renderCandles4h(svg,bars,target,opts={}){
  // v1.2.7: slightly tighter glow for CURRENT structural turning points only.
  // Keep the NOW quote orb on its original, independent filter/animation.
  const activeGlow=add('filter',{id:'active-turn-pulse-glow',x:'-250%',y:'-250%',width:'500%',height:'500%'},defs);
- add('feGaussianBlur',{stdDeviation:'4.2'},activeGlow);
+ add('feGaussianBlur',{stdDeviation:'3.6'},activeGlow);
  add('rect',{x:RIGHT+13,y:TOP-9,width:W-RIGHT-18,height:BOTTOM-TOP+18,rx:10,fill:'#071725'});
  add('line',{x1:RIGHT+7,x2:RIGHT+7,y1:TOP-10,y2:BOTTOM+10,stroke:'#30526a','stroke-width':1,'stroke-dasharray':'4 6'});
  // Remember price-scale labels, so an active structural axis tag may hide a colliding tick.
@@ -212,16 +212,16 @@ export function renderCandles4h(svg,bars,target,opts={}){
   if(isActive){
    // Glow is paint-only and has no pointer hit area, so hover remains dominant.
    const cy=top?y-2:y+2;
-   const halo=add('circle',{cx:x,cy,r:9,fill:stroke,opacity:.18,
+   const halo=add('circle',{cx:x,cy,r:8,fill:stroke,opacity:.18,
      filter:'url(#active-turn-pulse-glow)','pointer-events':'none',
      'data-role':'active-turn-halo','data-kind':pivot.kind},group);
-   add('animate',{attributeName:'r',values:'9;15;9',dur:'2.1s',repeatCount:'indefinite'},halo);
-   add('animate',{attributeName:'opacity',values:'.19;.43;.19',dur:'2.1s',repeatCount:'indefinite'},halo);
-   const ring=add('circle',{cx:x,cy,r:8,fill:'none',stroke,
+   add('animate',{attributeName:'r',values:'8;13;8',dur:'2.4s',repeatCount:'indefinite'},halo);
+   add('animate',{attributeName:'opacity',values:'.19;.43;.19',dur:'2.4s',repeatCount:'indefinite'},halo);
+   const ring=add('circle',{cx:x,cy,r:7,fill:'none',stroke,
      'stroke-width':1.5,opacity:.40,'pointer-events':'none',
      'data-role':'active-turn-ring'},group);
-   add('animate',{attributeName:'r',values:'8;12;8',dur:'2.1s',repeatCount:'indefinite'},ring);
-   add('animate',{attributeName:'opacity',values:'.28;.52;.28',dur:'2.1s',repeatCount:'indefinite'},ring);
+   add('animate',{attributeName:'r',values:'7;10;7',dur:'2.4s',repeatCount:'indefinite'},ring);
+   add('animate',{attributeName:'opacity',values:'.28;.52;.28',dur:'2.4s',repeatCount:'indefinite'},ring);
    // One short fade-in when the active selection changes, not every 1-second UI tick.
    if(previousActive[pivot.kind]?.id!==pivot.id){
     add('animate',{attributeName:'opacity',values:'0;1',dur:'.42s',fill:'freeze'},group);

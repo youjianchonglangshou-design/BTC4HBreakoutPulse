@@ -1,10 +1,9 @@
-BTC4HBreakoutPulse v1.2.7｜Active 呼吸光微調
+BTC4HBreakoutPulse v1.2.8｜Active 呼吸光再次微調
 
-僅上傳到：
-https://github.com/youjianchonglangshou-design/BTC4HBreakoutPulse
-請勿誤傳至 SStateMarketTerminal。
+僅上傳至：https://github.com/youjianchonglangshou-design/BTC4HBreakoutPulse
+切勿上傳至 SStateMarketTerminal！
 
-請依以下路徑覆蓋 / 新增：
+按下列原路徑覆蓋：
 index.html
 styles.css
 VERSION.json
@@ -18,4 +17,4 @@ tests/active_pivots.test.mjs
 tests/active_pivots_browser.py
 tests/layout_contract.test.mjs
 
-不需要更新模型權重、Worker 或 GitHub Actions。
+無須修改原本 Worker、模型參數或 GitHub Actions。

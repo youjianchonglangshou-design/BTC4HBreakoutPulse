@@ -73,17 +73,17 @@
 .feature-target-pill[data-kind="頂齊"]{color:#ffadb6;border-color:#a4576a;background:#482633}
 .feature-target-pill[data-kind="底齊"]{color:#78edc5;border-color:#31836c;background:#103f33}
 
-/* v1.2.7: slightly smaller, gently slower glow only for the CURRENT confirmed barrier. */
+/* v1.2.8: tighter 13px halo and gently slower 2.4s pulse for currently selected barriers only. */
 .level-quick[data-active="true"]{position:relative;isolation:isolate}
-.top-quick[data-active="true"]{animation:active-top-card 2.3s ease-in-out infinite}
-.floor-quick[data-active="true"]{animation:active-floor-card 2.3s ease-in-out infinite}
+.top-quick[data-active="true"]{animation:active-top-card 2.6s ease-in-out infinite}
+.floor-quick[data-active="true"]{animation:active-floor-card 2.6s ease-in-out infinite}
 @keyframes active-top-card{
-  0%,100%{box-shadow:0 0 0 1px rgba(242,117,133,.20),0 0 4px rgba(242,117,133,.07)}
-  50%{box-shadow:0 0 0 1px rgba(242,117,133,.55),0 0 11px rgba(242,117,133,.20)}
+  0%,100%{box-shadow:0 0 0 1px rgba(242,117,133,.20),0 0 3px rgba(242,117,133,.07)}
+  50%{box-shadow:0 0 0 1px rgba(242,117,133,.55),0 0 9px rgba(242,117,133,.18)}
 }
 @keyframes active-floor-card{
-  0%,100%{box-shadow:0 0 0 1px rgba(54,211,162,.20),0 0 4px rgba(54,211,162,.07)}
-  50%{box-shadow:0 0 0 1px rgba(54,211,162,.55),0 0 11px rgba(54,211,162,.20)}
+  0%,100%{box-shadow:0 0 0 1px rgba(54,211,162,.20),0 0 3px rgba(54,211,162,.07)}
+  50%{box-shadow:0 0 0 1px rgba(54,211,162,.55),0 0 9px rgba(54,211,162,.18)}
 }
 @media(prefers-reduced-motion:reduce){
   .top-quick[data-active="true"],.floor-quick[data-active="true"]{animation:none}

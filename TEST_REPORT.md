@@ -1,18 +1,21 @@
-# BTC4HBreakoutPulse v1.2.7｜Active 呼吸光微調測試報告
+# BTC4HBreakoutPulse v1.2.8｜Active 呼吸光第二輪微調
 
-## 變更範圍
+## 修改前後
 
-1. 頂齊與底齊有效轉折點的外圍光暈最大半徑 17→15、描邊環最大半徑 14→12。
-2. 活動光暈專用模糊濾鏡 5→4.2；動畫週期 1.8→2.1 秒（頂底齊兩者一致）。
-3. 同步略為縮小下方 Active 卡片陰影範圍，呼吸週期 2.0→2.3 秒。
-4. NOW 現價光點、歷史靜態標記、hover 顯示、Active 關卡切換、20:00 凍結及 v6.0 模型維持原邏輯。
+| 項目 | v1.2.7 | v1.2.8 |
+|---|---:|---:|
+| Active 圖上光圈半徑 | 9–15 | 8–13 |
+| Active 描邊環半徑 | 8–12 | 7–10 |
+| 專用光暈模糊 | 4.2 | 3.6 |
+| Active SVG 呼吸週期 | 2.1 秒 | 2.4 秒 |
+| Active 卡片週期 | 2.3 秒 | 2.6 秒 |
+| Active 卡片最大陰影 | 11px | 9px |
+| NOW 呼吸週期 | 1.8 秒 | 1.8 秒，不變 |
 
-## 執行測試
+## 相關測試
 
-- `npm test`（`node --test tests/*.test.mjs`）：**36/36 通過**。
-- `python tests/active_pivots_browser.py`：Chromium 真實渲染並取樣 `SVGAnimatedLength.animVal` 半徑，證實呼吸光 max ≤ 15、細環 max ≤ 12，且有可見幅度變化；驗證 2.1s SVG、2.3s 卡片、NOW 獨立 1.8s、滑鼠 hover、Active 切換、10 秒報價重繪均正常。
-- 影片僅作為原版呼吸範圍/速度參考；瀏覽器測試採合成 K 線，不代表線上 Pionex Worker 已經驗證。
+- `node --test tests/*.test.mjs`：**36／36 通過**。
+- `python tests/active_pivots_browser.py`：**通過**，以 Chromium 真正驗證 Active 頂／底齊動畫半徑、透明度、hover、切換選線、報價重新渲染，且 NOW 保持原值。
+- ZIP 檔必須含 `src/chart.js`、`styles.css`、`src/app.js`、`index.html`、`VERSION.json` 及測試，確認版號和動畫參數一致。
 
-## 上線
-
-請將 `BTC4HBreakoutPulse_v1.2.7_PULSE_TUNING_OVERWRITE.zip` 解壓後保留路徑，覆蓋 **BTC4HBreakoutPulse** 儲存庫 `main` 分支。
+測試環境行情為合成 K 線，不等同實際 GitHub Pages / Pionex 連線驗證。

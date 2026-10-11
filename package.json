@@ -1,6 +1,6 @@
 {
   "name": "btc4h-breakout-pulse",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "type": "module",
   "private": true,
   "scripts": {

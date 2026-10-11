@@ -48,21 +48,21 @@ with sync_playwright() as p:
  # Browser runtime geometry and speed, not only static test values.
  halo=svg.locator('[data-role="active-turn-halo"]').first
  ring=svg.locator('[data-role="active-turn-ring"]').first
- for part,expected_span in [(halo,6),(ring,4)]:
+ for part,expected_span in [(halo,5),(ring,3)]:
   sample=[]
   for _ in range(12):
    sample.append(part.evaluate('(el)=>el.r.animVal.value'))
    page.wait_for_timeout(160)
-  assert max(sample)<=(15.1 if expected_span==6 else 12.1),f'new radius max too big: {sample}'
-  assert max(sample)-min(sample)>(3.0 if expected_span==6 else 2.0),f'pulse too subtle or stopped: {sample}'
- assert halo.locator('animate').first.get_attribute('dur')=='2.1s'
- assert page.evaluate("getComputedStyle(document.querySelector('.top-quick')).animationDuration")=='2.3s'
- assert page.evaluate("getComputedStyle(document.querySelector('.floor-quick')).animationDuration")=='2.3s'
- print('PASS actual SVG radius samples stay ≤15/12 and continue visibly pulsing at 2.1s')
+  assert max(sample)<=(13.1 if expected_span==5 else 10.1),f'new radius max too big: {sample}'
+  assert max(sample)-min(sample)>(2.8 if expected_span==5 else 1.8),f'pulse too subtle or stopped: {sample}'
+ assert halo.locator('animate').first.get_attribute('dur')=='2.4s'
+ assert page.evaluate("getComputedStyle(document.querySelector('.top-quick')).animationDuration")=='2.6s'
+ assert page.evaluate("getComputedStyle(document.querySelector('.floor-quick')).animationDuration")=='2.6s'
+ print('PASS actual SVG radius samples stay ≤13/10 and continue visibly pulsing at 2.4s')
  assert page.evaluate("getComputedStyle(document.querySelector('.top-quick')).animationName")=='active-top-card'
  assert page.evaluate("getComputedStyle(document.querySelector('.floor-quick')).animationName")=='active-floor-card'
  page.wait_for_timeout(750)
- shot=root/'PREVIEW_v1.2.7_ACTIVE.png'
+ shot=root/'PREVIEW_v1.2.8_ACTIVE.png'
  page.screenshot(path=str(shot))
  print('PASS normal view: top red + floor green halos, card CSS glow, NOW label, exact active-only')
  # Hover prioritizes the legacy pivot guides and left price-axis tooltip.
@@ -75,7 +75,7 @@ with sync_playwright() as p:
  assert svg.locator('[data-role=pivot-extension-line]').get_attribute('stroke')=='#f27585'
  assert svg.locator('[data-role=pivot-axis-price-tag]').get_attribute('data-kind')=='頂齊'
  assert svg.locator('text').filter(has_text='NOW').count()==1
- shot=root/'PREVIEW_v1.2.7_HOVER.png'
+ shot=root/'PREVIEW_v1.2.8_HOVER.png'
  page.screenshot(path=str(shot))
  print('PASS hovered active TOP: axis guide/tooltip wins without removing glow')
  page.mouse.move(25,25)
@@ -99,4 +99,4 @@ with sync_playwright() as p:
  assert svg.locator('[data-role=alignment-turn-marker]').count()==2
  print('PASS active swap & 10-second quote redraw & false historical match suppressed')
  browser.close()
-print('PASS v1.2.7 Chromium active marker scenarios')
+print('PASS v1.2.8 Chromium active marker scenarios')
