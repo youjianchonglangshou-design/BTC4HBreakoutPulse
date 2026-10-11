@@ -1,26 +1,18 @@
-# BTC4HBreakoutPulse v1.2.6｜目前有效頂底齊呼吸光測試
+# BTC4HBreakoutPulse v1.2.7｜Active 呼吸光微調測試報告
 
-日期：2026-10-11
+## 變更範圍
 
-## 新版互動要求
+1. 頂齊與底齊有效轉折點的外圍光暈最大半徑 17→15、描邊環最大半徑 14→12。
+2. 活動光暈專用模糊濾鏡 5→4.2；動畫週期 1.8→2.1 秒（頂底齊兩者一致）。
+3. 同步略為縮小下方 Active 卡片陰影範圍，呼吸週期 2.0→2.3 秒。
+4. NOW 現價光點、歷史靜態標記、hover 顯示、Active 關卡切換、20:00 凍結及 v6.0 模型維持原邏輯。
 
-1. 依實際 `selectFirstBarrier` 選到的目前頂齊（紅）、底齊（綠），**同時**對應到圖表原始轉折 K，才啟用呼吸光。
-2. 歷史其餘轉折標記保持靜態；每種結構最多一個點亮。
-3. 不使用「價格接近」作為匹配條件；確認 `id / kind / formed / level`，避免亮到同價位的舊線。
-4. 關卡不在最近 48 根可見 K 時，不亮錯誤的歷史點；下方已選到的關卡卡片仍維持柔和邊框微光。
-5. 呼吸圈設 `pointer-events:none`，不遮擋原始 hover。懸停轉折的價軸標籤、虛線延伸、NOW 價標全部保留。
-6. 切換關卡時舊點淡出、新點淡入；圖表每 10 秒更新報價不會改變哪個歷史標記有效。
-7. 20:00 後保留原有凍結的關卡與機率，不用 20:00 後價格再選一次當次預測關卡。
+## 執行測試
 
-## 自動化測試
+- `npm test`（`node --test tests/*.test.mjs`）：**36/36 通過**。
+- `python tests/active_pivots_browser.py`：Chromium 真實渲染並取樣 `SVGAnimatedLength.animVal` 半徑，證實呼吸光 max ≤ 15、細環 max ≤ 12，且有可見幅度變化；驗證 2.1s SVG、2.3s 卡片、NOW 獨立 1.8s、滑鼠 hover、Active 切換、10 秒報價重繪均正常。
+- 影片僅作為原版呼吸範圍/速度參考；瀏覽器測試採合成 K 線，不代表線上 Pionex Worker 已經驗證。
 
-- `node --test tests/*.test.mjs` ： **35／35 通過**。
-- 新增 `tests/active_pivots.test.mjs`：匹配識別、只亮現行頂／底、歷史不亮、缺失不亂亮、關卡切換、10 秒重繪。
-- `python tests/active_pivots_browser.py`：Chromium 實際 SVG/DOM 與 CSS 呼吸透明度變化、紅綠卡片、游標優先權、左價軸標籤、NOW 保留、切換淡出及 quote 重繪 **全數通過**。
-- 已產生 `PREVIEW_v1.2.6_ACTIVE.png`、`PREVIEW_v1.2.6_HOVER.png`（合成行情，僅作 UI 測試）。
+## 上線
 
-## 未動項目與限制
-
-- 使用原本 Pionex 4H／15M／日線和即時報價；未修改資料介面。
-- 20:00 凍結、00:00 驗證和 v6.0 機率模型權重不變。
-- 本次 Chromium 測試使用合成 K 線；正式 GitHub Pages 與線上 Worker 的取價狀態需部署後核對。
+請將 `BTC4HBreakoutPulse_v1.2.7_PULSE_TUNING_OVERWRITE.zip` 解壓後保留路徑，覆蓋 **BTC4HBreakoutPulse** 儲存庫 `main` 分支。

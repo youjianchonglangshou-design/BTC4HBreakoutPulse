@@ -61,3 +61,31 @@ test('changing current TOP turns off the old, fades to the new marker; absent vi
   assert.equal(matching(svg,'active-turn-halo').length,0,'no historical marker falsely lights');
  }finally{globalThis.document=previous;}
 });
+
+test('v1.2.7 active-only animation has tighter 2.1s SVG radius, while NOW keeps 1.8s',()=>{
+ const oldDoc=globalThis.document;globalThis.document={createElementNS(_ns,tag){return element(tag);}};
+ try{
+  const svg=element();renderCandles4h(svg,bars,null,{now,currentPrice:83000,pivots,activeBarriers:[pivots[0],pivots[1]]});
+  const halo=matching(svg,'active-turn-halo'),ring=matching(svg,'active-turn-ring');
+  assert.equal(halo.length,2);assert.equal(ring.length,2);
+  for(const circle of halo){
+   const animations=circle.children.filter(e=>e.tag==='animate');
+   assert.deepEqual(animations.map(a=>a.attrs.attributeName),['r','opacity']);
+   assert.equal(animations[0].attrs.values,'9;15;9');
+   assert.equal(animations[0].attrs.dur,'2.1s');
+   assert.equal(animations[1].attrs.values,'.19;.43;.19');
+   assert.equal(circle.attrs.filter,'url(#active-turn-pulse-glow)');
+  }
+  for(const circle of ring){
+   const animations=circle.children.filter(e=>e.tag==='animate');
+   assert.equal(animations[0].attrs.values,'8;12;8');
+   assert.equal(animations[0].attrs.dur,'2.1s');
+  }
+  const defs=flat(svg).find(e=>e.tag==='filter'&&e.attrs.id==='active-turn-pulse-glow');
+  assert.equal(defs.children.find(e=>e.tag==='feGaussianBlur')?.attrs.stdDeviation,'4.2');
+  // Dedicated live NOW marker should not inherit the new active-turn animation.
+  const liveHalo=flat(svg).find(e=>e.tag==='circle'&&e.attrs.filter==='url(#price-pulse-glow)');
+  assert.ok(liveHalo,'NOW keeps its independent live-quote glow filter');
+  assert.equal(liveHalo.children.find(e=>e.tag==='animate')?.attrs.dur,'1.8s');
+ }finally{globalThis.document=oldDoc;}
+});
