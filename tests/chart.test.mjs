@@ -179,12 +179,21 @@ test('chart creates hover crosshair and historic pivot extension only when point
   nodes=flatten(svg);
   assert.equal(nodes.filter(x=>x.attrs['data-role']==='pivot-extension-line').length,1);
   const line=nodes.find(x=>x.attrs['data-role']==='pivot-extension-line');
-  assert.equal(line.attrs.x1,marker.attrs['data-x']);
+  assert.equal(line.attrs.x1,'61','pivot guide starts at LEFT price axis, not turning bar');
   assert.equal(line.attrs.x2,'1070');
   assert.equal(line.attrs.stroke,'#f27585');
+  const priceBox=flatten(cross).find(x=>x.tag==='rect'&&x.attrs.x==='2');
+  const cursorH=flatten(cross).find(x=>x.tag==='line'&&x.attrs.opacity==='0.76');
+  assert.ok(priceBox&&cursorH);
+  assert.equal(priceBox.attrs.visibility,'hidden','generic cursor price tag hidden while hovering pivot');
+  assert.equal(cursorH.attrs.visibility,'hidden','no overlapping generic horizontal crosshair');
+  assert.equal(cross.attrs['data-pivot-focus'],'true');
+
   assert.ok(nodes.some(x=>x.tag==='text'&&x.textContent===`頂齊 ${Number(pivot.level).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})}`));
   hit.dispatch('pointerleave');
   assert.equal(flatten(svg).filter(x=>x.attrs['data-role']==='pivot-extension-line').length,0);
+  assert.equal(priceBox.attrs.visibility,'visible','generic price tag restored on pivot leave');
+  assert.equal(cursorH.attrs.visibility,'visible','horizontal crosshair restored on pivot leave');
   svg.dispatch('pointerleave');
   assert.equal(cross.attrs.visibility,'hidden');
  }finally{globalThis.document=prev;}

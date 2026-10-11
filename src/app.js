@@ -4,7 +4,7 @@ import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
 import {selectFirstBarrier,scanHistoricalAlignments} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.2.3';
+import {renderCandles4h} from './chart.js?v=1.2.4';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 import {probabilityTone,contextTone} from './semantic.js';

@@ -1,6 +1,6 @@
 {
   "app": "BTC 4H Breakout Pulse",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "release": "2026-10-11",
   "model": "v6.0",
   "timeZone": "Asia/Taipei",
@@ -8,5 +8,5 @@
   "settleAt": "00:00",
   "tabQuoteIntervalSeconds": 10,
   "deployment": "GitHub Pages static",
-  "focus": "TradingView-style fixed-top OHLC, crosshair with price/date axis labels, hover any confirmed turn to reveal temporary price-level extension"
+  "focus": "Pivot hover extends dashed level from left price axis to right, hides generic mouse price-axis tag/horizontal crosshair; pivot price tooltip remains"
 }

@@ -270,6 +270,16 @@ export function renderCandles4h(svg,bars,target,opts={}){
  const priceText=label('',{x:30,fill:'#f2f7ff','font-size':10.6,'font-weight':750,'text-anchor':'middle'},cross);
  const dateBox=add('rect',{y:BOTTOM+5,width:114,height:21,rx:5,fill:'#243549',stroke:'#6f8296','stroke-width':.9},cross);
  const dateText=label('',{y:BOTTOM+19,fill:'#f2f7ff','font-size':10,'font-weight':750,'text-anchor':'middle'},cross);
+ // On a confirmed turn marker the focal point is its STRUCTURAL price label.
+ // Do not simultaneously show the generic mouse-Y price tag or the second
+ // horizontal crosshair, which could imply a different price level.
+ const setPivotFocus=(active)=>{
+  const visibility=active?'hidden':'visible';
+  priceBox.setAttribute('visibility',visibility);
+  priceText.setAttribute('visibility',visibility);
+  hline.setAttribute('visibility',visibility);
+  cross.setAttribute('data-pivot-focus',active?'true':'false');
+ };
  const cursorState=ohlcHoverState.get(svg)||{active:false,x:LEFT,y:TOP};
  ohlcHoverState.set(svg,cursorState);
  const showCursor=(px,py)=>{
@@ -278,6 +288,7 @@ export function renderCandles4h(svg,bars,target,opts={}){
   const b=data[chartHoverCandleIndex(px,data.length,g.dx)];
   showOhlc(b);
   cross.setAttribute('visibility','visible');
+  setPivotFocus(Boolean(pivotActive));
   for(const [axis,value] of [['x1',px],['x2',px]])vline.setAttribute(axis,value);
   vline.setAttribute('y1',TOP);vline.setAttribute('y2',BOTTOM);
   hline.setAttribute('x1',LEFT);hline.setAttribute('x2',RIGHT);
@@ -298,6 +309,7 @@ export function renderCandles4h(svg,bars,target,opts={}){
  const hidePivot=()=>{
   pivotActive=null;pivotState.active=false;
   if(pivotOverlay){pivotOverlay.remove();pivotOverlay=null;}
+  setPivotFocus(false);
  };
  const showPivot=(pivot,px)=>{
   const yLine=g.y(pivot.level),red=pivot.kind==='頂齊';
@@ -307,7 +319,9 @@ export function renderCandles4h(svg,bars,target,opts={}){
    if(pivotOverlay)pivotOverlay.remove();
    pivotOverlay=add('g',{'data-role':'pivot-level-overlay','data-kind':pivot.kind,
     'data-turn-ts':pivot.turnTs,'data-level':pivot.level,'pointer-events':'none'});
-   add('line',{x1:pivot.x,x2:GUTTER,y1:yLine,y2:yLine,stroke:color,
+   // Chart-wide level: reach the LEFT price-scale edge, not merely the
+   // turning candle. The historic turn is still identified by its marker.
+   add('line',{x1:LEFT,x2:GUTTER,y1:yLine,y2:yLine,stroke:color,
     'stroke-width':1.9,'stroke-dasharray':'8 6','data-role':'pivot-extension-line'},pivotOverlay);
    add('circle',{cx:pivot.x,cy:yLine,r:3.5,fill:color},pivotOverlay);
    const float=add('g',{'data-role':'pivot-price-tooltip'},pivotOverlay);
@@ -322,6 +336,7 @@ export function renderCandles4h(svg,bars,target,opts={}){
   if(tip)tip.setAttribute('transform',`translate(${pos.x} ${pos.y})`);
   pivotOverlay.setAttribute('data-tooltip-x',pos.x);
   pivotState.active=true;pivotState.id=pivot.id;pivotState.x=x;
+  setPivotFocus(true);
  };
  const markerHitEntries=[];
  for(const el of svg.querySelectorAll?.('[data-role="alignment-turn-marker"]')||[]){
@@ -341,10 +356,11 @@ export function renderCandles4h(svg,bars,target,opts={}){
  }
  const onMove=e=>{
   const pt=pointerSvgPosition(svg,e);
-  showCursor(pt.x,pt.y);
-  // Redraws and moving off a marker must not leave a stale extension on screen.
+  // Decide whether this is still a pivot focus BEFORE rendering mouse-Y
+  // controls, so the generic price tag returns immediately on pointer exit.
   if(pivotActive && !e.target?.closest?.('[data-role="turn-marker-hit"]') &&
       !markerHitEntries.some(([h])=>h===e.target))hidePivot();
+  showCursor(pt.x,pt.y);
  };
  const onLeave=()=>{
   cross.setAttribute('visibility','hidden');cursorState.active=false;

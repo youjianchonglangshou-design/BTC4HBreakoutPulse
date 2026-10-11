@@ -1,4 +1,4 @@
-# BTC4HBreakoutPulse v1.2.3 — 4H 頂齊／底齊轉折標記（延續 v1.2.1 配色）
+# BTC4HBreakoutPulse v1.2.4 — 轉折標記聚焦與價格軸延伸
 
 GitHub Pages 純前端：Pionex BTC 永續 4H 結構機率預測。
 
@@ -10,7 +10,7 @@ GitHub Pages 純前端：Pionex BTC 永續 4H 結構機率預測。
 - **日線中軌位置**：之上用綠色，之下用紅色。
 - **中軌斜率參照 SStateMarketTerminal** `monitor-engine.js`：以近 5 日、前 5 日布林中軌的線性回歸斜率比較，分類為上斜（綠）、平緩（灰藍）、下降走平中（橘）、下斜（紅）。不是單純依當下斜率正負分組。
 - **機率文字色彩**（不改動機率數值）：中軌之上預測突破頂齊，>50% 綠、<50% 橘；中軌之下預測跌破底齊，>50% 紅、<50% 橘；剛好 50% 灰；沒有有效機率時為中性色。數字旁的「偏弱／偏強」文字照原邏輯保留。
-- **當前顯示版本** `v1.2.3`，並更新瀏覽器快取參數。
+- **當前顯示版本** `v1.2.4`，並更新瀏覽器快取參數。
 
 ## 保留的既有功能
 
@@ -23,7 +23,7 @@ GitHub Pages 純前端：Pionex BTC 永續 4H 結構機率預測。
 
 ## 部署
 
-下載 `BTC4HBreakoutPulse_v1.2.3_TURN_MARK_OVERWRITE.zip`，解壓後**保留原檔案路徑**覆蓋 GitHub `BTC4HBreakoutPulse` 儲存庫 `main` 根目錄。GitHub Pages 仍使用 `main` / root；不需要 GitHub Actions 或其他新排程。
+下載 `BTC4HBreakoutPulse_v1.2.4_PIVOT_AXIS_OVERWRITE.zip`，解壓後**保留原檔案路徑**覆蓋 GitHub `BTC4HBreakoutPulse` 儲存庫 `main` 根目錄。GitHub Pages 仍使用 `main` / root；不需要 GitHub Actions 或其他新排程。
 
 ## 本機測試
 
@@ -35,7 +35,7 @@ python tests/tradingview_interaction_browser.py
 
 需 Python Playwright 與 Chromium。瀏覽器測試使用**模擬行情**，不代表已驗證部署後的 Worker 線上連線。
 
-## v1.2.3：4H 頂齊／底齊轉折標記
+## v1.2.2：4H 頂齊／底齊轉折標記
 
 - 頂齊：紅色拱形標記；底齊：綠色 U 形標記。
 - 標記位置以頂底齊最初「第一根反向 K」為準，**不使用延後 1～3 根的確認時間來定位**。
@@ -49,7 +49,7 @@ python tests/tradingview_interaction_browser.py
 
 - 移到圖內任意 K 棒：OHLC 數據固定顯示在圖表頂部（TPE 時間、開、高、低、收、漲跌幅及成交量），不再在 K 棒旁出現瀏覽器原生白色提示框。
 - 游標同時顯示十字虛線、左側價位框與底部 K 棒日期時間框，離開繪圖區後隱藏。
-- 滑鼠移到**任一已確認歷史頂齊紅弧／底齊綠 U**：從最初轉折的 K 線向右顯示該價位水平延伸虛線，並顯示與既有目標線一致的圖內浮動價位標籤，移開立即消失。
+- 滑鼠移到**任一已確認歷史頂齊紅弧／底齊綠 U**：從左側價格軸水平延伸到右側顯示該價位虛線，並顯示與既有目標線一致的圖內浮動價位標籤，移開立即消失。
 - 頂底齊的最初形成與 1～3 根後的確認時間仍嚴格分離；只有確認之後才允許顯示標記及互動線，避免使用未來資料。
 - 10 秒行情重新繪製時清理原 SVG 事件監聽器；不影響 Pionex NOW、頁籤價格、20:00 凍結或 v6.0 機率。
 
@@ -60,3 +60,11 @@ node --test tests/*.test.mjs
 python tests/turn_markers_browser.py
 python tests/tradingview_interaction_browser.py
 ```
+
+## v1.2.4：滑鼠聚焦頂／底齊時，讓結構價位成為唯一焦點
+
+- 滑鼠懸停紅色頂齊拱形或綠色底齊 U 形：對應價格虛線從**左側價格軸起點**（SVG `LEFT=61`）一直畫到**右側價位區**（`GUTTER=1070`），不再從轉折 K 棒才開始。
+- 維持滑鼠旁的**專屬頂齊／底齊價格標籤**；暫時隱藏 TradingView 十字游標的**一般左側游標價格框**和**一般水平游標線**，避免視覺上有兩個不同價格。
+- 原有 K 棒垂直游標、下方日期、頂端 OHLC 仍可顯示。滑鼠離開轉折記號：專屬線及價格提示消失，普通十字游標價格框恢復。
+- 頂齊紅 `#f27585`、底齊綠 `#36d3a2`，與原轉折記號一致；NOW 仍位於右側且每 10 秒更新。
+- 只更改**圖表視覺與互動**；Pionex 取數、歷史頂底齊偵測與選線、20:00 凍結、00:00 驗證、v6.0 模型權重不變。
