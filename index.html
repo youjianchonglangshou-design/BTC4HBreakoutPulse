@@ -5,7 +5,7 @@
 <meta name="description" content="BTC Pionex 4H 頂齊突破、底齊跌破預測：20:00 前動態，20:00 凍結。">
 <meta name="theme-color" content="#071321">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=1.2.4">
+<link rel="stylesheet" href="styles.css?v=1.2.5">
 <title>BTC</title>
 </head>
 <body>
@@ -16,7 +16,7 @@
     <div class="chart-head">
       <div class="chart-heading"><h1>派網 4H K 線 <span>頂齊 · 底齊 · 即時價格</span></h1></div>
       <div class="head-status">
-        <span class="version-mark" title="網站程式版本">v1.2.4</span>
+        <span class="version-mark" title="網站程式版本">v1.2.5</span>
         <div class="status-pill countdown-pill"><span>預測倒數</span><strong id="countdown">--:--:--</strong></div>
         <div class="status-pill live-pill"><span class="pulse-dot"></span><strong id="connection">派網 10秒更新 · --:--:--</strong></div>
       </div>
@@ -62,9 +62,9 @@
         <span class="hover-cue context-cue">滑入查看完整模型依據 ↗</span>
         <div class="detail-popover context-detail" role="tooltip">
           <div class="popup-title"><span>日線環境與模型判斷</span><span class="popup-source">PIONEX · DAILY</span></div>
-          <div class="context-detail-row"><span>當日日線中軌位置</span><strong id="midState">—</strong></div>
-          <div class="context-detail-row"><span>中軌斜率</span><strong id="slopeState">—</strong></div>
-          <div class="context-detail-row"><span>平均 K</span><strong id="haState">—</strong></div>
+          <div class="context-detail-row"><span>當日日線中軌位置</span><strong class="state-value detail-state-value" id="midState">—</strong></div>
+          <div class="context-detail-row"><span>中軌斜率</span><strong class="state-value detail-state-value" id="slopeState">—</strong></div>
+          <div class="context-detail-row"><span>平均 K</span><strong class="state-value detail-state-value" id="haState">—</strong></div>
           <div class="popup-reason"><h3>這個機率為什麼變動？</h3><p id="explanation">正在取得模型依據。</p><div id="featureList" class="features"></div></div>
           <div class="context-detail-row compact-last"><span>確認時間／觸碰／突破／ATR 距離</span><strong><span id="lineConfirmed">—</span> · <span id="touchCount">—</span> · <span id="crossCount">—</span> · <span id="distance">—</span></strong></div>
         </div>
@@ -82,6 +82,6 @@
 <details class="archive-drawer"><summary>歷史凍結與驗證紀錄 <span id="archiveCount">本裝置紀錄</span></summary><div id="archive" class="archive"><p class="micro">尚無凍結紀錄。</p></div></details>
 <footer title="v6.0 權重來自 Binance 現貨九年訓練，派網歷史尚待重校準。">Pionex BTC_USDT_PERP · 10 秒即時價格 · 20:00 凍結｜v6.0 模型原以 Binance 現貨訓練，派網機率尚待重新校準。</footer>
 </div>
-<script type="module" src="src/app.js?v=1.2.4"></script>
+<script type="module" src="src/app.js?v=1.2.5"></script>
 </body>
 </html>

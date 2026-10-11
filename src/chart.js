@@ -146,11 +146,14 @@ export function renderCandles4h(svg,bars,target,opts={}){
  add('feGaussianBlur',{stdDeviation:'5'},glow);
  add('rect',{x:RIGHT+13,y:TOP-9,width:W-RIGHT-18,height:BOTTOM-TOP+18,rx:10,fill:'#071725'});
  add('line',{x1:RIGHT+7,x2:RIGHT+7,y1:TOP-10,y2:BOTTOM+10,stroke:'#30526a','stroke-width':1,'stroke-dasharray':'4 6'});
+ // Remember price-scale labels, so an active structural axis tag may hide a colliding tick.
+ const axisTicks=[];
  // price grids and scales
  for(let i=0;i<6;i++){
   const v=g.high-(g.high-g.low)*i/5,yy=g.y(v);
   add('line',{x1:LEFT,y1:yy,x2:RIGHT,y2:yy,stroke:'#244057','stroke-width':1,'stroke-dasharray':'3 7',opacity:.75});
-  label(fmt(v),{x:LEFT-10,y:yy+4,fill:'#7d98b4','font-size':10.5,'text-anchor':'end'});
+  const tick=label(fmt(v),{x:LEFT-10,y:yy+4,fill:'#7d98b4','font-size':10.5,'text-anchor':'end'});
+  axisTicks.push({node:tick,y:yy});
  }
  for(let i=0;i<=8;i++){
   const x=LEFT+(RIGHT-LEFT)*i/8;
@@ -307,37 +310,47 @@ export function renderCandles4h(svg,bars,target,opts={}){
  const pivotState=pivotHoverState.get(svg)||{active:false,id:null,x:LEFT};
  pivotHoverState.set(svg,pivotState);
  const hidePivot=()=>{
+  for(const tick of axisTicks)tick.node.setAttribute('visibility','visible');
   pivotActive=null;pivotState.active=false;
   if(pivotOverlay){pivotOverlay.remove();pivotOverlay=null;}
   setPivotFocus(false);
  };
+ // One left-axis label is the only price focus for a hovered turn. The
+ // dashed guide passes through the EXACT vertical midpoint of that label.
+ const AXIS_TAG_X=1,AXIS_TAG_WIDTH=LEFT-2,AXIS_TAG_HEIGHT=22;
  const showPivot=(pivot,px)=>{
   const yLine=g.y(pivot.level),red=pivot.kind==='頂齊';
   const color=red?'#f27585':'#36d3a2';
-  const x=clamp(px,LEFT,RIGHT),pos=hoverTooltipGeometry(x,yLine);
+  const x=clamp(px,LEFT,RIGHT);
   if(!pivotOverlay || pivotActive!==pivot.id){
    if(pivotOverlay)pivotOverlay.remove();
    pivotOverlay=add('g',{'data-role':'pivot-level-overlay','data-kind':pivot.kind,
     'data-turn-ts':pivot.turnTs,'data-level':pivot.level,'pointer-events':'none'});
-   // Chart-wide level: reach the LEFT price-scale edge, not merely the
-   // turning candle. The historic turn is still identified by its marker.
-   add('line',{x1:LEFT,x2:GUTTER,y1:yLine,y2:yLine,stroke:color,
+   // Draw the line through the left price-scale area, all the way to the right.
+   // Tag is painted later on top, but shares the same yLine centerline.
+   add('line',{x1:0,x2:GUTTER,y1:yLine,y2:yLine,stroke:color,
     'stroke-width':1.9,'stroke-dasharray':'8 6','data-role':'pivot-extension-line'},pivotOverlay);
    add('circle',{cx:pivot.x,cy:yLine,r:3.5,fill:color},pivotOverlay);
-   const float=add('g',{'data-role':'pivot-price-tooltip'},pivotOverlay);
-   add('rect',{width:TOOLTIP_WIDTH,height:TOOLTIP_HEIGHT,rx:7,
-    fill:red?'#38252f':'#102e28',stroke:color,'stroke-width':1},float);
-   label(`${pivot.kind} ${fmt(pivot.level)}`,{x:10,y:17,
-    fill:red?'#ffe5e7':'#d8ffef','font-size':12.5,'font-weight':800},float);
+   const tag=add('g',{'data-role':'pivot-axis-price-tag','data-kind':pivot.kind,
+    'data-center-y':yLine,'aria-label':`${pivot.kind} ${fmt(pivot.level)}`},pivotOverlay);
+   add('rect',{x:AXIS_TAG_X,y:yLine-AXIS_TAG_HEIGHT/2,
+    width:AXIS_TAG_WIDTH,height:AXIS_TAG_HEIGHT,rx:4,
+    fill:red?'#682c39':'#0c5946',stroke:color,'stroke-width':1.2},tag);
+   label(fmt(pivot.level),{x:AXIS_TAG_X+AXIS_TAG_WIDTH/2,y:yLine+3.8,
+    fill:red?'#fff1f2':'#edfff6','font-size':10.1,'font-weight':850,
+    'text-anchor':'middle'},tag);
    pivotActive=pivot.id;
   }
-  const tip=pivotOverlay.querySelector?.('[data-role="pivot-price-tooltip"]')
-    ||pivotOverlay.children.find?.(c=>c.attrs?.['data-role']==='pivot-price-tooltip');
-  if(tip)tip.setAttribute('transform',`translate(${pos.x} ${pos.y})`);
-  pivotOverlay.setAttribute('data-tooltip-x',pos.x);
+  // Hide only the tick(s) overlapping this axis tag; other scale labels remain.
+  for(const tick of axisTicks){
+   tick.node.setAttribute('visibility',Math.abs(tick.y-yLine)<AXIS_TAG_HEIGHT/2+6?'hidden':'visible');
+  }
+  pivotOverlay.setAttribute('data-tooltip-x',AXIS_TAG_X);
+  pivotOverlay.setAttribute('data-tooltip-y',yLine-AXIS_TAG_HEIGHT/2);
   pivotState.active=true;pivotState.id=pivot.id;pivotState.x=x;
   setPivotFocus(true);
  };
+
  const markerHitEntries=[];
  for(const el of svg.querySelectorAll?.('[data-role="alignment-turn-marker"]')||[]){
   if(el.__hoverHit && el.__pivot)markerHitEntries.push([el.__hoverHit,el.__pivot]);

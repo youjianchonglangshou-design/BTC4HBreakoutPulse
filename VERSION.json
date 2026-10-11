@@ -1,6 +1,6 @@
 {
   "app": "BTC 4H Breakout Pulse",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "release": "2026-10-11",
   "model": "v6.0",
   "timeZone": "Asia/Taipei",
@@ -8,5 +8,5 @@
   "settleAt": "00:00",
   "tabQuoteIntervalSeconds": 10,
   "deployment": "GitHub Pages static",
-  "focus": "Pivot hover extends dashed level from left price axis to right, hides generic mouse price-axis tag/horizontal crosshair; pivot price tooltip remains"
+  "focus": "Red/green pivot hover shows left price-axis label centered exactly on dashed guide; daily context detail panels reuse summary semantic pills"
 }

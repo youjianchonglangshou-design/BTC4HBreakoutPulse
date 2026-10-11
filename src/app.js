@@ -4,7 +4,7 @@ import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
 import {selectFirstBarrier,scanHistoricalAlignments} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.2.4';
+import {renderCandles4h} from './chart.js?v=1.2.5';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 import {probabilityTone,contextTone} from './semantic.js';
@@ -87,6 +87,10 @@ function setFeatureRows(rows){
  const el=$('featureList');el.replaceChildren();
  for(const [name,value] of rows){const div=document.createElement('div');div.className='feature';
   const l=document.createElement('span');l.textContent=name;const v=document.createElement('strong');v.textContent=value;
+  if(name==='預測目標'&&/^(頂齊|底齊)\s/.test(String(value))){
+   v.className='feature-target-pill';
+   v.setAttribute('data-kind',String(value).startsWith('頂齊')?'頂齊':'底齊');
+  }
   div.append(l,v);el.append(div);
  }
 }
@@ -145,7 +149,7 @@ function renderLevels(pred,now){
 }
 function updatePalette(daily,kind,percent){
  const ctx=contextTone(daily);
- for(const [id,tone] of [['summaryMid',ctx.mid],['summarySlope',ctx.slope],['summaryHA',ctx.ha]]){
+ for(const [id,tone] of [['summaryMid',ctx.mid],['summarySlope',ctx.slope],['summaryHA',ctx.ha],['midState',ctx.mid],['slopeState',ctx.slope],['haState',ctx.ha]]){
   const elem=$(id);if(elem){elem.setAttribute('data-tone',tone);elem.parentElement?.setAttribute?.('data-tone',tone);}
  }
  const pTone=probabilityTone(kind,percent);

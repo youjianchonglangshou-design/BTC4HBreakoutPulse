@@ -39,7 +39,7 @@ with sync_playwright() as p:
  assert axis.locator('rect').count()==2
  assert axis.locator('text').count()==2
  assert not svg.locator('g[data-role=pivot-level-overlay]').count()
- page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.4_OHLC_CROSSHAIR.png')
+ page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.5_OHLC_CROSSHAIR.png')
  print('PASS K棒：頂端 OHLC＋漲跌幅＋量、十字虛線、價格標籤、日期時間標籤')
  for kind,col in [('頂齊','#f27585'),('底齊','#36d3a2')]:
   mark=svg.locator(f'[data-role=alignment-turn-marker][data-kind="{kind}"]')
@@ -51,19 +51,22 @@ with sync_playwright() as p:
   over=svg.locator('[data-role=pivot-level-overlay]')
   line=over.locator('[data-role=pivot-extension-line]')
   assert line.get_attribute('stroke')==col
-  assert line.get_attribute('x1')=='61','horizontal guide must extend LEFT to price axis, not begin at turning candle'
+  assert line.get_attribute('x1')=='0','horizontal guide must pass through left price label center, not begin at turning candle'
   assert line.get_attribute('x2')=='1070','extend right to price gutter'
-  assert over.locator('text').text_content().startswith(kind)
+  assert over.locator('[data-role=pivot-axis-price-tag]').count()==1
+  tag=over.locator('[data-role=pivot-axis-price-tag]')
+  rect=tag.locator('rect')
+  assert float(rect.get_attribute('y'))+float(rect.get_attribute('height'))/2==float(line.get_attribute('y1'))
   assert axis.locator('rect').first.get_attribute('visibility')=='hidden', 'generic mouse price axis label must be off during pivot focus'
   assert axis.locator('text').first.get_attribute('visibility')=='hidden', 'generic mouse price text must be off during pivot focus'
   assert axis.locator('line').nth(1).get_attribute('visibility')=='hidden', 'second generic horizontal guide must be off during pivot focus'
   assert axis.locator('line').first.get_attribute('visibility')!='hidden', 'vertical crosshair may remain'
-  assert over.locator('[data-role=pivot-price-tooltip]').count()==1, 'only structural price is highlighted'
+  assert over.locator('[data-role=pivot-axis-price-tag]').count()==1, 'only structural left-axis price is highlighted'
   assert svg.locator('text').filter(has_text='NOW').count()==1
   if kind=='頂齊':
-   page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.4_TOP_TURN_HOVER.png')
+   page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.5_TOP_TURN_HOVER.png')
   else:
-   page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.4_FLOOR_TURN_HOVER.png')
+   page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.5_FLOOR_TURN_HOVER.png')
   # A marker has fully distinct hover overlay, not the prediction barrier line.
   move_svg(800,250)
   assert over.count()==0,kind+' overlay must disappear when pointer leaves'
@@ -89,7 +92,7 @@ with sync_playwright() as p:
  widths=page.evaluate('''()=>({scroll:document.documentElement.scrollWidth,inner:innerWidth})''')
  assert widths['scroll']<=widths['inner']+2, widths
  assert page.locator('#chartOhlc').is_visible()
- page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.4_MOBILE.png')
+ page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.5_MOBILE.png')
  print('PASS 手機版 390px：無水平溢出、頂端 OHLC 仍保留')
  browser.close()
 print('PASS TradingView-style E2E all browser checks')
