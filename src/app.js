@@ -4,7 +4,7 @@ import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
 import {selectFirstBarrier,scanHistoricalAlignments} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.2.5';
+import {renderCandles4h} from './chart.js?v=1.2.6';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 import {probabilityTone,contextTone} from './semantic.js';
@@ -116,8 +116,12 @@ function renderLevels(pred,now){
  const confirmedAtDecision=S.fourHour.filter(b=>b.ts+FOUR_HOURS<=selectionTime);
  const last=S.fourHour.filter(b=>b.ts+FOUR_HOURS<=now);
  const price=pred?.price??extractQuotePrice(),atr=pred?.atr??atr14(confirmedAtDecision,selectionTime);
- const top=Number.isFinite(price)&&atr>0?selectFirstBarrier(confirmedAtDecision,selectionTime,price,atr,'頂齊',{maxAgeDays:365,maxDistanceATR:3,maxTouches:8}):null;
- const floor=Number.isFinite(price)&&atr>0?selectFirstBarrier(confirmedAtDecision,selectionTime,price,atr,'底齊',{maxAgeDays:365,maxDistanceATR:3,maxTouches:8}):null;
+ let top=Number.isFinite(price)&&atr>0?selectFirstBarrier(confirmedAtDecision,selectionTime,price,atr,'頂齊',{maxAgeDays:365,maxDistanceATR:3,maxTouches:8}):null;
+ let floor=Number.isFinite(price)&&atr>0?selectFirstBarrier(confirmedAtDecision,selectionTime,price,atr,'底齊',{maxAgeDays:365,maxDistanceATR:3,maxTouches:8}):null;
+ const target=pred?.line??null;
+ // After 20:00 the displayed card AND its glowing pivot must use the same immutable line.
+ if(target?.kind==='頂齊')top=target;
+ if(target?.kind==='底齊')floor=target;
  for(const [id,line] of [['top',top],['floor',floor]]){
   set(id==='top'?'topLevel':'floorLevel',line?fmt(line.level,1):'尚無有效關卡');
   set(id==='top'?'summaryTop':'summaryFloor',line?fmt(line.level,1):'—');
@@ -127,8 +131,7 @@ function renderLevels(pred,now){
   set(id==='top'?'topCrosses':'floorCrosses',line?`${line.crossCount} 次`:'—');
   set(id==='top'?'topDistance':'floorDistance',line&&atr>0?`${fmt(Math.abs(line.level-price)/atr,3)} ATR`:'—');
  }
- // On frozen days the active target must remain the immutable 20:00 line.
- const target=pred?.line??null;
+ // On frozen days the active target remains the immutable 20:00 line.
  set('chartSource',S.historySources.fourHour?.includes('TradingView')?'PIONEX · TV 圖表':S.historySources.fourHour?.includes('Worker')?'PIONEX · Worker':'PIONEX · 載入中');
  // The forming Pionex 4H candle and 10-second quote affect only the chart.
  // Confirmed barriers, history, and frozen forecast never use this forming candle.
@@ -140,7 +143,19 @@ function renderLevels(pred,now){
   const events=scanHistoricalAlignments(last,now).events;
   S.pivotCache={key:pivotKey,events};
  }
- renderCandles4h($('candles'),last,target,{currentPrice:extractQuotePrice(),liveBar,now, pivots:S.pivotCache.events});
+ // Use the SAME pre-20:00 / frozen selection as the cards and prediction.
+ // Do not light a different historical turn just because its price is nearby.
+ const activeTop=top;
+ const activeFloor=floor;
+ for(const [selector,selected] of [['.top-quick',activeTop],['.floor-quick',activeFloor]]){
+  const card=document.querySelector(selector);
+  if(card){
+   card.setAttribute('data-active',selected?'true':'false');
+   card.title=selected?`目前採用的${selected.kind} ${fmt(selected.level,1)}`:'';
+  }
+ }
+ renderCandles4h($('candles'),last,target,{currentPrice:extractQuotePrice(),liveBar,now,
+  pivots:S.pivotCache.events,activeBarriers:[activeTop,activeFloor].filter(Boolean)});
  set('historyStatus',S.fourHour.length>=240?`${last.length} 根派網4H已收線`:'派網4H不足');
  set('lineConfirmed',target?tpeTime(target.confirmed):'—');
  set('touchCount',target?`${target.episodes} 回`:'—');

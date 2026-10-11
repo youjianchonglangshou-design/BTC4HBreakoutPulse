@@ -1,32 +1,26 @@
-# BTC4HBreakoutPulse v1.2.5 覆核報告
+# BTC4HBreakoutPulse v1.2.6｜目前有效頂底齊呼吸光測試
 
-2026-10-11｜修改範圍：**細節浮窗語意膠囊**、**轉折懸停時左側價格軸標籤**。未重新訓練機率模型、未改變 Pionex 取價、20:00 凍結與 00:00 驗證邏輯。
+日期：2026-10-11
 
-## 需求逐項覆核
+## 新版互動要求
 
-| 需求 | 驗證結果 |
-|---|---|
-| 主畫面日線中軌/斜率/平均K三膠囊，與滑入浮窗顏色同步 | 通過，浮窗值欄皆使用同一套 `state-value[data-tone]` |
-| 黃色平均K | 通過，`#FFEB3B` |
-| 紫色平均K | 通過，`#B39DDB` |
-| 中軌之下紅／中軌之上綠，斜率上斜綠、下斜紅等 | 通過，沿用 v1.2.4 `contextTone` 映射 |
-| 頂齊／底齊的浮窗價位 | 通過，頂齊紅／底齊綠 |
-| 浮窗內「預測目標」 | 通過，頂齊紅／底齊綠膠囊 |
-| 滑到頂齊記號，左軸顯示紅色價位標籤 | 通過，實機 Chromium 移動滑鼠 |
-| 滑到底齊記號，左軸顯示綠色價位標籤 | 通過，實機 Chromium 移動滑鼠 |
-| 虛線穿過標籤的垂直中心 | 通過，座標逐項核對 `line.y1 === rect.y + rect.height / 2` |
-| 懸停時不保留一般滑鼠水平十字虛線和一般滑鼠價位框 | 通過 |
-| 左側既有刻度與結構價位重疊時 | 通過，重疊刻度暫隱，離開恢復 |
-| 右側 NOW 價格 | 保留，不與左側結構標籤重疊 |
-| 離開轉折記號 | 通過，移除結構線與價軸標籤 |
-| v1.2.5 版本與快取參數 | 通過 |
+1. 依實際 `selectFirstBarrier` 選到的目前頂齊（紅）、底齊（綠），**同時**對應到圖表原始轉折 K，才啟用呼吸光。
+2. 歷史其餘轉折標記保持靜態；每種結構最多一個點亮。
+3. 不使用「價格接近」作為匹配條件；確認 `id / kind / formed / level`，避免亮到同價位的舊線。
+4. 關卡不在最近 48 根可見 K 時，不亮錯誤的歷史點；下方已選到的關卡卡片仍維持柔和邊框微光。
+5. 呼吸圈設 `pointer-events:none`，不遮擋原始 hover。懸停轉折的價軸標籤、虛線延伸、NOW 價標全部保留。
+6. 切換關卡時舊點淡出、新點淡入；圖表每 10 秒更新報價不會改變哪個歷史標記有效。
+7. 20:00 後保留原有凍結的關卡與機率，不用 20:00 後價格再選一次當次預測關卡。
 
-## 實際測試
+## 自動化測試
 
-- `node --test tests/*.test.mjs`：**32 / 32 通過**。
-- `python tests/pivot_axis_semantics_browser.py`：**通過**。真實 Chromium 紅綠轉折懸停與離開、價軸標籤的幾何對齊、三種日線配色浮窗、頂底齊浮窗、黃紫替換。
-- `python tests/tradingview_interaction_browser.py`：**通過**。真實 Chromium K 棒 OHLC、十字游標、頂底齊懸停、NOW 報價重繪、390px 手機版無水平溢出。
+- `node --test tests/*.test.mjs` ： **35／35 通過**。
+- 新增 `tests/active_pivots.test.mjs`：匹配識別、只亮現行頂／底、歷史不亮、缺失不亂亮、關卡切換、10 秒重繪。
+- `python tests/active_pivots_browser.py`：Chromium 實際 SVG/DOM 與 CSS 呼吸透明度變化、紅綠卡片、游標優先權、左價軸標籤、NOW 保留、切換淡出及 quote 重繪 **全數通過**。
+- 已產生 `PREVIEW_v1.2.6_ACTIVE.png`、`PREVIEW_v1.2.6_HOVER.png`（合成行情，僅作 UI 測試）。
 
-以上瀏覽器測試使用合成 K 棒，驗證互動與排版，**不代表已實際連上生產環境 Pionex/Worker**。
+## 未動項目與限制
 
-請上傳到 `https://github.com/youjianchonglangshou-design/BTC4HBreakoutPulse`，**不可上傳到 SStateMarketTerminal**。
+- 使用原本 Pionex 4H／15M／日線和即時報價；未修改資料介面。
+- 20:00 凍結、00:00 驗證和 v6.0 機率模型權重不變。
+- 本次 Chromium 測試使用合成 K 線；正式 GitHub Pages 與線上 Worker 的取價狀態需部署後核對。

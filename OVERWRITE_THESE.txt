@@ -1,15 +1,19 @@
-BTC4HBreakoutPulse v1.2.5 - 請上傳到 BTC4HBreakoutPulse，勿放入 SStateMarketTerminal。
+BTC4HBreakoutPulse v1.2.6
 
-需依原始路徑覆蓋：
+請將本 ZIP 解壓縮後，將相同目錄結構的以下檔案上傳覆蓋至
+https://github.com/youjianchonglangshou-design/BTC4HBreakoutPulse
+請勿上傳至 SStateMarketTerminal。
+
 index.html
 styles.css
-src/app.js
-src/chart.js
 VERSION.json
 package.json
 README.md
 TEST_REPORT.md
+src/app.js
+src/chart.js
+tests/layout_contract.test.mjs
+tests/active_pivots.test.mjs
+tests/active_pivots_browser.py
 
-新增測試：
-tests/pivot_axis_semantics_browser.py
-tests/axis_label_contract.test.mjs
+備註：這次沒有修改 src/structure.js、src/engine.js、src/feeds.js 或 model/ 資料。

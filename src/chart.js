@@ -8,6 +8,7 @@ const hoverState=new WeakMap();
 const pivotHoverState=new WeakMap();
 const ohlcHoverState=new WeakMap();
 const rootHandlers=new WeakMap();
+const lastActiveMarkers=new WeakMap();
 const ns='http://www.w3.org/2000/svg';
 const fmt=v=>Number(v).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
 const tpe=ts=>{
@@ -110,6 +111,17 @@ export function turnMarkerGeometry(visible,events,asOf,g=chartGeometry(visible,n
  return positions;
 }
 
+/** Match the exact confirmed alignment event, never a nearby old line.
+ * It is legal for the selected line to exist outside the visible 48 bars;
+ * in that case none of the historical markers will pulse.
+ */
+export function pivotMatchesActive(pivot,selected){
+ if(!pivot||!selected||pivot.kind!==selected.kind)return false;
+ if(!Number.isFinite(pivot.formed)||pivot.formed!==selected.formed)return false;
+ if(pivot.id&&selected.id&&pivot.id!==selected.id)return false;
+ return Number.isFinite(pivot.level)&&Number.isFinite(selected.level)&&Math.abs(pivot.level-selected.level)<1e-6;
+}
+
 /** Large market chart, full-width with old BTCFLOWPulse-style price marker in the right gutter. */
 export function renderCandles4h(svg,bars,target,opts={}){
  const now=opts.now??Date.now();
@@ -117,7 +129,9 @@ export function renderCandles4h(svg,bars,target,opts={}){
  const data=buildVisibleCandles(bars,now,opts.liveBar,price);
  const line=target&&positive(target.level)?target:null;
  const markerEvents=opts.pivots||[];
- const signature=[data.length,...data.slice(-2).flatMap(b=>[b.ts,b.open,b.high,b.low,b.close]),line?.level,line?.kind,price,markerEvents.map(x=>x.id+':'+x.confirmed).join(',')].join('|');
+ const activeBarriers=opts.activeBarriers||[];
+ const selectionSignature=activeBarriers.map(b=>b?`${b.kind}:${b.id}:${b.formed}:${b.level}`:'—').join(',');
+ const signature=[data.length,...data.slice(-2).flatMap(b=>[b.ts,b.open,b.high,b.low,b.close]),line?.level,line?.kind,price,markerEvents.map(x=>x.id+':'+x.confirmed).join(','),selectionSignature].join('|');
  if(cache.get(svg)===signature)return;
  cache.set(svg,signature);
  // This SVG is redrawn every 10 seconds. Remove old root listeners first,
@@ -172,12 +186,16 @@ export function renderCandles4h(svg,bars,target,opts={}){
   if(i===0||i===data.length-1||i%6===0)label(tpe(b.ts),{x,y:BOTTOM+26,fill:b.forming?'#5bddb8':'#7f9db7','font-size':9.7,'text-anchor':'middle'});
   if(b.forming)label('LIVE',{x,y:TOP-9,fill:'#65ecc2','font-size':11,'font-weight':800,'text-anchor':'middle'});
  });
- // Confirmed historical TOP/FLOOR turns: mark the actual red/green reversal pair.
- // Red arch = 4H TOP resistance; green bowl = 4H FLOOR support.
- // The 1–3-bar delayed confirmation only controls WHEN the marker becomes visible,
- // NEVER WHERE it is drawn (position = turnTs, not confirmed).
- for(const pivot of turnMarkerGeometry(data,markerEvents,now,g)){
+ // Historical turns stay static. Only the exact currently selected TOP/FLOOR
+ // acquires a restrained breathing halo, at its ORIGINAL turning candle.
+ const previousActive=lastActiveMarkers.get(svg)||{};
+ const currentActive={};
+ const visiblePivots=turnMarkerGeometry(data,markerEvents,now,g);
+ for(const pivot of visiblePivots){
   const top=pivot.kind==='頂齊',stroke=top?'#f27585':'#36d3a2';
+  const selected=activeBarriers.find(b=>pivotMatchesActive(pivot,b));
+  const isActive=Boolean(selected)&&!currentActive[pivot.kind];
+  if(isActive)currentActive[pivot.kind]={id:pivot.id,x:pivot.x,y:pivot.y};
   const {x,y}=pivot;
   const path=top
    ?`M ${x-10} ${y+4} Q ${x} ${y-12} ${x+10} ${y+4}`
@@ -185,18 +203,49 @@ export function renderCandles4h(svg,bars,target,opts={}){
   const group=add('g',{'data-role':'alignment-turn-marker',
    'data-kind':pivot.kind,'data-turn-ts':pivot.turnTs,
    'data-formed-ts':pivot.formed,'data-confirmed-ts':pivot.confirmed,
-   'data-x':x,'data-y':y,'aria-label':`${pivot.kind}轉折標記：${fmt(pivot.level)}`});
-  add('path',{d:path,stroke,fill:'none','stroke-width':3.1,'stroke-linecap':'round',
+   'data-active':isActive?'true':'false',
+   'data-x':x,'data-y':y,'aria-label':`${pivot.kind}轉折標記：${fmt(pivot.level)}${isActive?'（目前有效）':''}`});
+  if(isActive){
+   // Glow is paint-only and has no pointer hit area, so hover remains dominant.
+   const cy=top?y-2:y+2;
+   const halo=add('circle',{cx:x,cy,r:12,fill:stroke,opacity:.18,
+     filter:'url(#price-pulse-glow)','pointer-events':'none',
+     'data-role':'active-turn-halo','data-kind':pivot.kind},group);
+   add('animate',{attributeName:'r',values:'9;17;9',dur:'1.8s',repeatCount:'indefinite'},halo);
+   add('animate',{attributeName:'opacity',values:'.19;.46;.19',dur:'1.8s',repeatCount:'indefinite'},halo);
+   const ring=add('circle',{cx:x,cy,r:9,fill:'none',stroke,
+     'stroke-width':1.6,opacity:.40,'pointer-events':'none',
+     'data-role':'active-turn-ring'},group);
+   add('animate',{attributeName:'r',values:'8;14;8',dur:'1.8s',repeatCount:'indefinite'},ring);
+   add('animate',{attributeName:'opacity',values:'.28;.56;.28',dur:'1.8s',repeatCount:'indefinite'},ring);
+   // One short fade-in when the active selection changes, not every 1-second UI tick.
+   if(previousActive[pivot.kind]?.id!==pivot.id){
+    add('animate',{attributeName:'opacity',values:'0;1',dur:'.42s',fill:'freeze'},group);
+   }
+  }
+  add('path',{d:path,stroke,fill:'none','stroke-width':isActive?3.6:3.1,'stroke-linecap':'round',
    'stroke-linejoin':'round','pointer-events':'none'},group);
-  add('circle',{cx:x,cy:top?y-2:y+2,r:2.3,fill:stroke,'pointer-events':'none'},group);
-  // The marked turn is the hover target, NOT the later confirming candle.
-  // A larger transparent target makes thin red/green arcs easy to interact with.
+  add('circle',{cx:x,cy:top?y-2:y+2,r:isActive?3:2.3,fill:stroke,'pointer-events':'none'},group);
+  // The marker keeps exactly its original hover affordance.
   const hit=add('circle',{cx:x,cy:y,r:16,fill:'transparent',
    'pointer-events':'all','data-role':'turn-marker-hit',cursor:'crosshair',tabindex:0,
    'aria-label':`${pivot.kind} 轉折 ${fmt(pivot.level)} ${fullTpe(pivot.turnTs)}`},group);
   group.__hoverHit=hit;
   group.__pivot=pivot;
  }
+ // Fade the previous glowing point out when the active barrier changes.
+ for(const kind of ['頂齊','底齊']){
+  const previous=previousActive[kind],current=currentActive[kind];
+  if(previous&&previous.id!==current?.id){
+   const color=kind==='頂齊'?'#f27585':'#36d3a2';
+   const ghost=add('g',{'data-role':'active-turn-exit','data-kind':kind,
+     'pointer-events':'none'});
+   add('circle',{cx:previous.x,cy:previous.y,r:12,fill:color,opacity:.25,
+     filter:'url(#price-pulse-glow)'},ghost);
+   add('animate',{attributeName:'opacity',values:'.6;0',dur:'.46s',fill:'freeze'},ghost);
+  }
+ }
+ lastActiveMarkers.set(svg,currentActive);
  // Frozen barrier remains visible as a dashed line, but NO label is created by default.
  // The hover hit-region is intentionally drawn last, above the live quote graphics.
  let barrierHover = null;
