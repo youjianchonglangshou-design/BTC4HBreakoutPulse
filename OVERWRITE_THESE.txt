@@ -1,22 +1,27 @@
-BTC4HBreakoutPulse v1.2.2｜只更新 BTC4HBreakoutPulse 儲存庫
-==========================================================
+BTC4HBreakoutPulse v1.2.3 - 需覆蓋檔案
+=========================================
 
-注意：請勿上傳到 SStateMarketTerminal。正確儲存庫網址：
+正確 GitHub 儲存庫：
 https://github.com/youjianchonglangshou-design/BTC4HBreakoutPulse
 
-請將 ZIP 內下列檔案依「原本目錄結構」覆蓋到該儲存庫 main 分支根目錄：
+請解壓縮後，以以下相同相對路徑覆蓋該儲存庫 main 根目錄。
+請勿上傳到 SStateMarketTerminal！
 
-index.html
-VERSION.json
-package.json
-src/app.js
-src/chart.js
-src/structure.js
-tests/chart.test.mjs
-tests/layout_contract.test.mjs
-tests/turn_markers_browser.py
-README.md
-TEST_REPORT.md
-OVERWRITE_THESE.txt
+網站必要更新檔案：
+- index.html
+- styles.css
+- src/app.js
+- src/chart.js
+- VERSION.json
+- package.json
 
-本次沒有修改 styles.css、Pionex 取價通道、v6.0 機率模型權重。
+隨附版本說明與測試（可一起覆蓋）：
+- README.md
+- TEST_REPORT.md
+- OVERWRITE_THESE.txt
+- tests/chart.test.mjs
+- tests/layout_contract.test.mjs
+- tests/turn_markers_browser.py
+- tests/tradingview_interaction_browser.py
+
+不需改動 Worker、Pionex 取價、其他模型檔或 GitHub Actions。

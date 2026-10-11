@@ -5,6 +5,9 @@ const W=1200,H=405,LEFT=61,RIGHT=1061,TOP=21,BOTTOM=354,GUTTER=1070;
 const OHLC_MS=4*3600_000;
 const cache=new WeakMap();
 const hoverState=new WeakMap();
+const pivotHoverState=new WeakMap();
+const ohlcHoverState=new WeakMap();
+const rootHandlers=new WeakMap();
 const ns='http://www.w3.org/2000/svg';
 const fmt=v=>Number(v).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
 const tpe=ts=>{
@@ -12,6 +15,16 @@ const tpe=ts=>{
  return `${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')} ${String(d.getUTCHours()).padStart(2,'0')}:00`;
 };
 const positive=n=>Number.isFinite(n)&&n>0;
+const fullTpe=ts=>{const d=new Date(ts+8*3600_000);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')} ${String(d.getUTCHours()).padStart(2,'0')}:00`;};
+const fmtVolume=v=>{if(!Number.isFinite(v)||v<=0)return '—';if(v>=1e9)return (v/1e9).toFixed(2)+'B';if(v>=1e6)return (v/1e6).toFixed(2)+'M';if(v>=1e3)return (v/1e3).toFixed(2)+'K';return v.toFixed(2);};
+/** Fixed-top TradingView-style OHLC string; never a native browser popup. */
+export function formatChartOhlc(bar){
+ if(!bar)return '滑鼠移入 K 棒查看開、高、低、收、漲跌幅及成交量';
+ const change=(bar.close/bar.open-1)*100;
+ return `${fullTpe(bar.ts)}${bar.forming?' · LIVE':''}  開 ${fmt(bar.open)}   高 ${fmt(bar.high)}   低 ${fmt(bar.low)}   收 ${fmt(bar.close)}   ${change>=0?'+':''}${change.toFixed(2)}%   量 ${fmtVolume(bar.volume)}`;
+}
+/** Pointer X is mapped to the candle column, never to a future or unrelated K. */
+export function chartHoverCandleIndex(x,total,dx){return clamp(Math.floor((x-LEFT)/dx),0,total-1);}
 const clamp=(n,lo,hi)=>Math.max(lo,Math.min(hi,n));
 const TOOLTIP_WIDTH=136,TOOLTIP_HEIGHT=25;
 /** Convert browser pointer coordinates to SVG viewBox coordinates, including responsive scaling. */
@@ -107,6 +120,13 @@ export function renderCandles4h(svg,bars,target,opts={}){
  const signature=[data.length,...data.slice(-2).flatMap(b=>[b.ts,b.open,b.high,b.low,b.close]),line?.level,line?.kind,price,markerEvents.map(x=>x.id+':'+x.confirmed).join(',')].join('|');
  if(cache.get(svg)===signature)return;
  cache.set(svg,signature);
+ // This SVG is redrawn every 10 seconds. Remove old root listeners first,
+ // otherwise stale crosshairs and OHLC handlers accumulate indefinitely.
+ const previousHandlers=rootHandlers.get(svg);
+ if(previousHandlers){
+  svg.removeEventListener?.('pointermove',previousHandlers.move);
+  svg.removeEventListener?.('pointerleave',previousHandlers.leave);
+ }
  svg.replaceChildren();
  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
  if(data.length<2)return;
@@ -119,6 +139,9 @@ export function renderCandles4h(svg,bars,target,opts={}){
  };
  const label=(text,attrs={},parent=svg)=>{const e=add('text',attrs,parent);e.textContent=text;return e;};
  const defs=add('defs');
+ const ohlcBar=svg.closest?.('.chart-frame')?.querySelector?.('#chartOhlc')||null;
+ const showOhlc=bar=>{if(ohlcBar){ohlcBar.textContent=formatChartOhlc(bar);ohlcBar.dataset.tone=bar?(bar.close>=bar.open?'up':'down'):'neutral';}};
+ showOhlc(data.at(-1));
  const glow=add('filter',{id:'price-pulse-glow',x:'-250%',y:'-250%',width:'500%',height:'500%'},defs);
  add('feGaussianBlur',{stdDeviation:'5'},glow);
  add('rect',{x:RIGHT+13,y:TOP-9,width:W-RIGHT-18,height:BOTTOM-TOP+18,rx:10,fill:'#071725'});
@@ -138,7 +161,6 @@ export function renderCandles4h(svg,bars,target,opts={}){
  const bodyW=Math.max(5,Math.min(22,g.dx*.60));
  data.forEach((b,i)=>{
   const x=LEFT+(i+.5)*g.dx,col=b.close>=b.open?'#20c79c':'#f17a86',p=add('g');
-  const title=add('title',{},p);title.textContent=`${tpe(b.ts)} TPE${b.forming?' · LIVE':''}  O ${fmt(b.open)}  H ${fmt(b.high)}  L ${fmt(b.low)}  C ${fmt(b.close)}`;
   if(b.forming)add('rect',{x:x-g.dx*.46,y:TOP,width:g.dx*.92,height:BOTTOM-TOP,fill:'#1c685e',opacity:.14,rx:3},p);
   add('line',{x1:x,x2:x,y1:g.y(b.high),y2:g.y(b.low),stroke:col,'stroke-width':Math.max(1.4,bodyW*.10)},p);
   add('rect',{x:x-bodyW/2,y:Math.min(g.y(b.open),g.y(b.close)),width:bodyW,
@@ -161,10 +183,16 @@ export function renderCandles4h(svg,bars,target,opts={}){
    'data-kind':pivot.kind,'data-turn-ts':pivot.turnTs,
    'data-formed-ts':pivot.formed,'data-confirmed-ts':pivot.confirmed,
    'data-x':x,'data-y':y,'aria-label':`${pivot.kind}轉折標記：${fmt(pivot.level)}`});
-  add('title',{},group).textContent=`${pivot.kind} ${fmt(pivot.level)}｜轉折 ${tpe(pivot.turnTs)}｜確認 ${tpe(pivot.confirmed)}`;
   add('path',{d:path,stroke,fill:'none','stroke-width':3.1,'stroke-linecap':'round',
    'stroke-linejoin':'round','pointer-events':'none'},group);
   add('circle',{cx:x,cy:top?y-2:y+2,r:2.3,fill:stroke,'pointer-events':'none'},group);
+  // The marked turn is the hover target, NOT the later confirming candle.
+  // A larger transparent target makes thin red/green arcs easy to interact with.
+  const hit=add('circle',{cx:x,cy:y,r:16,fill:'transparent',
+   'pointer-events':'all','data-role':'turn-marker-hit',cursor:'crosshair',tabindex:0,
+   'aria-label':`${pivot.kind} 轉折 ${fmt(pivot.level)} ${fullTpe(pivot.turnTs)}`},group);
+  group.__hoverHit=hit;
+  group.__pivot=pivot;
  }
  // Frozen barrier remains visible as a dashed line, but NO label is created by default.
  // The hover hit-region is intentionally drawn last, above the live quote graphics.
@@ -232,5 +260,104 @@ export function renderCandles4h(svg,bars,target,opts={}){
   }
  }else{
   const state=hoverState.get(svg);if(state)state.active=false;
+ }
+ // --- TradingView-inspired cursor: pinned OHLC in the top header, crosshair,
+ //     price-axis cursor tag and date/time tag along the bottom axis. ---
+ const cross=add('g',{'data-role':'chart-crosshair',visibility:'hidden','pointer-events':'none'});
+ const vline=add('line',{stroke:'#b5c6dd','stroke-width':.9,'stroke-dasharray':'5 5',opacity:.82},cross);
+ const hline=add('line',{stroke:'#b5c6dd','stroke-width':.9,'stroke-dasharray':'5 5',opacity:.76},cross);
+ const priceBox=add('rect',{x:2,width:56,height:20,rx:4,fill:'#243549',stroke:'#6f8296','stroke-width':.9},cross);
+ const priceText=label('',{x:30,fill:'#f2f7ff','font-size':10.6,'font-weight':750,'text-anchor':'middle'},cross);
+ const dateBox=add('rect',{y:BOTTOM+5,width:114,height:21,rx:5,fill:'#243549',stroke:'#6f8296','stroke-width':.9},cross);
+ const dateText=label('',{y:BOTTOM+19,fill:'#f2f7ff','font-size':10,'font-weight':750,'text-anchor':'middle'},cross);
+ const cursorState=ohlcHoverState.get(svg)||{active:false,x:LEFT,y:TOP};
+ ohlcHoverState.set(svg,cursorState);
+ const showCursor=(px,py)=>{
+  if(px<LEFT||px>RIGHT||py<TOP||py>BOTTOM){cross.setAttribute('visibility','hidden');cursorState.active=false;return;}
+  cursorState.active=true;cursorState.x=px;cursorState.y=py;
+  const b=data[chartHoverCandleIndex(px,data.length,g.dx)];
+  showOhlc(b);
+  cross.setAttribute('visibility','visible');
+  for(const [axis,value] of [['x1',px],['x2',px]])vline.setAttribute(axis,value);
+  vline.setAttribute('y1',TOP);vline.setAttribute('y2',BOTTOM);
+  hline.setAttribute('x1',LEFT);hline.setAttribute('x2',RIGHT);
+  hline.setAttribute('y1',py);hline.setAttribute('y2',py);
+  priceBox.setAttribute('y',clamp(py-10,TOP,BOTTOM-20));
+  priceText.setAttribute('y',clamp(py+4,TOP+14,BOTTOM-6));
+  priceText.textContent=fmt(g.low+(BOTTOM-py)/(BOTTOM-TOP)*(g.high-g.low));
+  const dateX=clamp(px-57,LEFT+1,RIGHT-115);
+  dateBox.setAttribute('x',dateX);dateText.setAttribute('x',dateX+57);
+  dateText.textContent=tpe(b.ts);
+ };
+ // --- Historical turn-hover: temporary dashed extension from the ORIGINAL
+ //     turning bar to the right, never from the confirmation candle. ---
+ let pivotOverlay=null;
+ let pivotActive=null;
+ const pivotState=pivotHoverState.get(svg)||{active:false,id:null,x:LEFT};
+ pivotHoverState.set(svg,pivotState);
+ const hidePivot=()=>{
+  pivotActive=null;pivotState.active=false;
+  if(pivotOverlay){pivotOverlay.remove();pivotOverlay=null;}
+ };
+ const showPivot=(pivot,px)=>{
+  const yLine=g.y(pivot.level),red=pivot.kind==='頂齊';
+  const color=red?'#f27585':'#36d3a2';
+  const x=clamp(px,LEFT,RIGHT),pos=hoverTooltipGeometry(x,yLine);
+  if(!pivotOverlay || pivotActive!==pivot.id){
+   if(pivotOverlay)pivotOverlay.remove();
+   pivotOverlay=add('g',{'data-role':'pivot-level-overlay','data-kind':pivot.kind,
+    'data-turn-ts':pivot.turnTs,'data-level':pivot.level,'pointer-events':'none'});
+   add('line',{x1:pivot.x,x2:GUTTER,y1:yLine,y2:yLine,stroke:color,
+    'stroke-width':1.9,'stroke-dasharray':'8 6','data-role':'pivot-extension-line'},pivotOverlay);
+   add('circle',{cx:pivot.x,cy:yLine,r:3.5,fill:color},pivotOverlay);
+   const float=add('g',{'data-role':'pivot-price-tooltip'},pivotOverlay);
+   add('rect',{width:TOOLTIP_WIDTH,height:TOOLTIP_HEIGHT,rx:7,
+    fill:red?'#38252f':'#102e28',stroke:color,'stroke-width':1},float);
+   label(`${pivot.kind} ${fmt(pivot.level)}`,{x:10,y:17,
+    fill:red?'#ffe5e7':'#d8ffef','font-size':12.5,'font-weight':800},float);
+   pivotActive=pivot.id;
+  }
+  const tip=pivotOverlay.querySelector?.('[data-role="pivot-price-tooltip"]')
+    ||pivotOverlay.children.find?.(c=>c.attrs?.['data-role']==='pivot-price-tooltip');
+  if(tip)tip.setAttribute('transform',`translate(${pos.x} ${pos.y})`);
+  pivotOverlay.setAttribute('data-tooltip-x',pos.x);
+  pivotState.active=true;pivotState.id=pivot.id;pivotState.x=x;
+ };
+ const markerHitEntries=[];
+ for(const el of svg.querySelectorAll?.('[data-role="alignment-turn-marker"]')||[]){
+  if(el.__hoverHit && el.__pivot)markerHitEntries.push([el.__hoverHit,el.__pivot]);
+ }
+ // Node unit-test SVG stubs lack querySelectorAll. Map directly from children too.
+ if(!markerHitEntries.length){for(const el of svg.children||[]){
+  if(el.__hoverHit&&el.__pivot)markerHitEntries.push([el.__hoverHit,el.__pivot]);
+ }}
+ for(const [hit,pivot] of markerHitEntries){
+  const show=e=>showPivot(pivot,pointerSvgPosition(svg,e).x);
+  hit.addEventListener('pointerenter',show);
+  hit.addEventListener('pointermove',show);
+  hit.addEventListener('pointerleave',hidePivot);
+  hit.addEventListener('focus',()=>showPivot(pivot,pivot.x));
+  hit.addEventListener('blur',hidePivot);
+ }
+ const onMove=e=>{
+  const pt=pointerSvgPosition(svg,e);
+  showCursor(pt.x,pt.y);
+  // Redraws and moving off a marker must not leave a stale extension on screen.
+  if(pivotActive && !e.target?.closest?.('[data-role="turn-marker-hit"]') &&
+      !markerHitEntries.some(([h])=>h===e.target))hidePivot();
+ };
+ const onLeave=()=>{
+  cross.setAttribute('visibility','hidden');cursorState.active=false;
+  showOhlc(data.at(-1));hidePivot();
+ };
+ svg.addEventListener('pointermove',onMove);
+ svg.addEventListener('pointerleave',onLeave);
+ rootHandlers.set(svg,{move:onMove,leave:onLeave});
+ // After the 10-second quote redraw restore hover only while cursor is in chart.
+ if(cursorState.active)showCursor(cursorState.x,cursorState.y);
+ if(pivotState.active){
+  const found=markerHitEntries.find(([,pivot])=>pivot.id===pivotState.id);
+  if(found)showPivot(found[1],pivotState.x);
+  else pivotState.active=false;
  }
 }

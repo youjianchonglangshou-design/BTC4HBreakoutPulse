@@ -45,3 +45,12 @@
 .prob-heading>span:first-child{color:var(--p-accent)}
 .prob-pane h2{color:#f3f7fd}
 @media(max-width:650px){.market-mini-line.state-pill{min-height:30px}.state-value{max-width:78%;font-size:10px!important}}
+
+/* v1.2.3: TradingView-like fixed-top OHLC strip. SVG crosshair never uses native title popups. */
+.chart-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:22px}
+.chart-title>strong{flex:none}
+.chart-ohlc{flex:1;min-width:250px;color:#a6bcd5!important;font-size:10px!important;font-weight:760;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chart-ohlc[data-tone="up"]{color:#43e3b1!important}
+.chart-ohlc[data-tone="down"]{color:#ff8897!important}
+#chartSource{flex:none}
+@media(max-width:650px){.chart-title{gap:5px}.chart-ohlc{order:3;flex:1 0 100%;min-width:0;font-size:9px!important}}

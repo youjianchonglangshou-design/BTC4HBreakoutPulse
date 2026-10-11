@@ -76,12 +76,13 @@ with sync_playwright() as p:
   assert int(times['c'])==future+14400000,(kind,times,future)
   assert times['t']!=times['c'],(kind,times)
   assert mark.locator('path').get_attribute('stroke')==color
-  text=mark.locator('title').text_content()
-  assert '轉折 ' in text and '確認 ' in text
+  text=mark.get_attribute('aria-label')
+  assert '轉折' in text
+  assert mark.locator('[data-role=turn-marker-hit]').count()==1
   print(f'PASS {kind}: mark at turning bar {turn_index}, confirmation bar {confirm_index}, color {color}')
  assert page.locator('svg [data-role="barrier-tooltip"]').count()==0
  assert page.locator('svg text').filter(has_text='NOW').count()==1
- page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.2_TURN_MARKERS_PREVIEW.png',full_page=True)
+ page.screenshot(path='/mnt/data/BTC4HBreakoutPulse_v1.2.3_DEFAULT.png',full_page=True)
  # Confirm time embargo: if 'asOf' is before confirmation, a pre-computed future marker must not be displayed.
  page.evaluate('''() => window.renderCandles4h(document.getElementById('candles'),window._bars,null,
     {now:window._bars[15].ts+14400000,currentPrice:window._bars[15].close,pivots:window._marks})''')

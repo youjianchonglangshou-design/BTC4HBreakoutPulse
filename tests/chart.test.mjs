@@ -148,3 +148,44 @@ test('pivot markers use first opposite-color turn bar, even if wick-break confir
     'no retroactive confirmed marker before it was confirmed');
  }finally{globalThis.document=previous;}
 });
+
+import {formatChartOhlc,chartHoverCandleIndex} from '../src/chart.js';
+test('TradingView top strip prints Taiwan local time, O H L C change and volume',()=>{
+ const bar={ts:Date.parse('2026-10-11T04:00:00Z'),open:82000,high:83300,low:81500,close:82600,volume:9968};
+ const s=formatChartOhlc(bar);
+ assert.match(s,/2026-10-11 12:00/);
+ for(const c of ['開 82,000.0','高 83,300.0','低 81,500.0','收 82,600.0','+0.73%','量 9.97K'])assert.ok(s.includes(c),c);
+ assert.equal(chartHoverCandleIndex(61,40,25),0);
+ assert.equal(chartHoverCandleIndex(61+25*21+.2,40,25),21);
+ assert.equal(chartHoverCandleIndex(1060,40,25),39);
+});
+test('chart creates hover crosshair and historic pivot extension only when pointer enters turn mark',()=>{
+ const prev=globalThis.document;globalThis.document={createElementNS(_ns,t){return node(t);}};
+ try{
+  const data=candles(38),source=data[9],turn=data[10];
+  const pivot={id:'historical-top',kind:'頂齊',level:source.close,formed:source.ts,turnTs:turn.ts,confirmed:data[12].ts+FOUR};
+  const svg=node();renderCandles4h(svg,data,null,{now,currentPrice:82200,pivots:[pivot]});
+  let nodes=flatten(svg);
+  const cross=nodes.find(x=>x.attrs['data-role']==='chart-crosshair');
+  assert.ok(cross);assert.equal(cross.attrs.visibility,'hidden');
+  assert.equal(nodes.filter(x=>x.attrs['data-role']==='pivot-extension-line').length,0);
+  svg.dispatch('pointermove',{svgX:340,svgY:130});
+  assert.equal(cross.attrs.visibility,'visible');
+  assert.ok(flatten(cross).some(x=>x.tag==='text'&&x.textContent.includes('10/')));
+  const marker=nodes.find(x=>x.attrs['data-role']==='alignment-turn-marker');
+  assert.ok(marker);assert.equal(marker.attrs['data-turn-ts'],String(turn.ts));
+  const hit=nodes.find(x=>x.attrs['data-role']==='turn-marker-hit');
+  assert.ok(hit);hit.dispatch('pointerenter',{svgX:350,svgY:130});
+  nodes=flatten(svg);
+  assert.equal(nodes.filter(x=>x.attrs['data-role']==='pivot-extension-line').length,1);
+  const line=nodes.find(x=>x.attrs['data-role']==='pivot-extension-line');
+  assert.equal(line.attrs.x1,marker.attrs['data-x']);
+  assert.equal(line.attrs.x2,'1070');
+  assert.equal(line.attrs.stroke,'#f27585');
+  assert.ok(nodes.some(x=>x.tag==='text'&&x.textContent===`頂齊 ${Number(pivot.level).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})}`));
+  hit.dispatch('pointerleave');
+  assert.equal(flatten(svg).filter(x=>x.attrs['data-role']==='pivot-extension-line').length,0);
+  svg.dispatch('pointerleave');
+  assert.equal(cross.attrs.visibility,'hidden');
+ }finally{globalThis.document=prev;}
+});
