@@ -59,7 +59,8 @@ test('GitHub Pages entry loads Pionex chart 4H/15M/1D and Pionex quote; below mi
   assert.ok(chartChildren.some(x=>x.textContent==='NOW 86,223.4'),'Live quote is written INSIDE the Pionex 4H SVG');
   assert.ok(chartChildren.some(x=>x.attrs['stroke-dasharray']==='8 7'&&x.attrs.stroke==='#23d7ee'),'Live horizontal cyan price line');
   assert.ok(chartChildren.some(x=>x.attrs.stroke==='#26d9e9'),'Live price tag is outlined');
-  assert.equal(globalThis.document.title,'BTC 86,223.4');
+  const tabDirection=elements.get('midState').textContent.includes('中軌之下')?'跌破':'突破';
+  assert.equal(globalThis.document.title,`BTC 86,223.4｜${p} ${tabDirection}`);
   assert.match(elements.get('midState').textContent,/中軌之/);
   assert.match(elements.get('chartSource').textContent,/PIONEX/);
   assert.match(elements.get('freezeBadge').textContent,/動態/);

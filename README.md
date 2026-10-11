@@ -1,4 +1,4 @@
-# BTC4HBreakoutPulse v1.2.8 — Active 頂底齊呼吸光細緻微調
+# BTC4HBreakoutPulse v1.2.9 — Active 頂底齊呼吸光細緻微調
 
 GitHub Pages 純前端：Pionex BTC 永續 4H 結構機率預測。
 
@@ -10,7 +10,7 @@ GitHub Pages 純前端：Pionex BTC 永續 4H 結構機率預測。
 - **日線中軌位置**：之上用綠色，之下用紅色。
 - **中軌斜率參照 SStateMarketTerminal** `monitor-engine.js`：以近 5 日、前 5 日布林中軌的線性回歸斜率比較，分類為上斜（綠）、平緩（灰藍）、下降走平中（橘）、下斜（紅）。不是單純依當下斜率正負分組。
 - **機率文字色彩**（不改動機率數值）：中軌之上預測突破頂齊，>50% 綠、<50% 橘；中軌之下預測跌破底齊，>50% 紅、<50% 橘；剛好 50% 灰；沒有有效機率時為中性色。數字旁的「偏弱／偏強」文字照原邏輯保留。
-- **當前顯示版本** `v1.2.8`，並更新瀏覽器快取參數。
+- **當前顯示版本** `v1.2.9`，並更新瀏覽器快取參數。
 
 ## 保留的既有功能
 
@@ -23,7 +23,7 @@ GitHub Pages 純前端：Pionex BTC 永續 4H 結構機率預測。
 
 ## 部署
 
-下載 `BTC4HBreakoutPulse_v1.2.8_PULSE_TUNING_OVERWRITE.zip`，解壓後**保留原檔案路徑**覆蓋 GitHub `BTC4HBreakoutPulse` 儲存庫 `main` 根目錄。GitHub Pages 仍使用 `main` / root；不需要 GitHub Actions 或其他新排程。
+下載 `BTC4HBreakoutPulse_v1.2.9_PULSE_TUNING_OVERWRITE.zip`，解壓後**保留原檔案路徑**覆蓋 GitHub `BTC4HBreakoutPulse` 儲存庫 `main` 根目錄。GitHub Pages 仍使用 `main` / root；不需要 GitHub Actions 或其他新排程。
 
 ## 本機測試
 
@@ -84,7 +84,7 @@ python tests/tradingview_interaction_browser.py
 - 1.8 秒柔和脈動，換關卡時短暫淡入、淡出。
 
 
-## v1.2.8｜縮小呼吸範圍、稍微放慢頻率
+## v1.2.9｜縮小呼吸範圍、稍微放慢頻率
 
 - 僅調整目前有效頂齊（紅）與底齊（綠）的 SVG 呼吸圈：光暈最大半徑 **17→15**、細圈最大半徑 **14→12**，專用模糊度 **5→4.2**，讓光暈稍微更集中。
 - 呼吸時間 **1.8 秒→2.1 秒**，仍能明顯辨識，不致過慢；強度上限由 `.46` 調為 `.43`。
@@ -93,9 +93,18 @@ python tests/tradingview_interaction_browser.py
 - 針對 SVG 實際動畫半徑、週期及兩類卡片寫入測試，並完成 Chromium 真實動畫測試。
 
 
-## v1.2.8｜Active 頂底齊呼吸光再次微調
+## v1.2.9｜Active 頂底齊呼吸光再次微調
 
 - 紅色頂齊／綠色底齊 Active 光圈半徑從 `9→15→9` 縮為 `8→13→8`，外環 `8→12→8` 縮為 `7→10→7`，模糊值 `4.2→3.6`。
 - Active 標記呼吸週期從 `2.1s→2.4s`，下方小卡片從 `2.3s→2.6s`，最大陰影 `11px→9px`。
 - 每一類 Active 最多一個發光點；歷史標記、原有 hover、NOW 價格光點與 Pionex 行情邏輯不變。
 - 驗證：`npm test`、`python tests/active_pivots_browser.py`，使用合成行情進行 Chromium 動畫半徑實測。
+
+## v1.2.9｜瀏覽器分頁籤同步顯示 BTC 報價與突破／跌破機率
+
+分頁籤範例：`BTC 83,032.9｜7.4% 跌破`、`BTC 87,052.1｜54.2% 突破`。
+
+- 資料直接沿用首頁顯示的 Pionex 每 10 秒即時報價與大字 v6.0 機率，無第二套計算。
+- 20:00 前機率動態變化；20:00 凍結後只更新分頁籤的價格，機率及方向固定。
+- 無有效模型機率時，分頁籤只顯示 `BTC 最新報價`；不殘留舊 %。
+- 本版沒有改動呼吸光、圖表與其他分析邏輯。

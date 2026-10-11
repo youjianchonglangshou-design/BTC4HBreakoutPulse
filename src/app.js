@@ -4,7 +4,7 @@ import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
 import {selectFirstBarrier,scanHistoricalAlignments} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.2.8';
+import {renderCandles4h} from './chart.js?v=1.2.9';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 import {probabilityTone,contextTone} from './semantic.js';
@@ -45,8 +45,8 @@ async function pollQuote(){
  if(S.pollBusy)return;S.pollBusy=true;
  try{
   const q=await fetchQuotes();S.quotes=q;
-  const display=q.pionex;
-  if(display){updateBtcTabTitle(display);}
+  // The page render will update BOTH price and its current/frozen model score
+  // together; do not overwrite the tab with a price-only title here.
   set('quoteSource','PIONEX BTC_USDT_PERP · 10 秒');
   set('connection',`派網 10秒更新 · ${tpeClock(q.ts)}`);
  }catch(e){set('connection','即時行情連線失敗 · 重試中');S.error=e.message;showError();}
@@ -179,6 +179,11 @@ function render(){
  maybeFreezeAndSettle(now);
  let snap=pre?createModelData(now):getFrozen(window.date);
  if(!pre&&!snap)snap={status:'FREEZE_PENDING',reason:'20:00 已停止動態推算，正以20:00之前已收線的歷史K線重建快照'};
+ // Same quote + same prediction as the large number on this page.
+ // Before 20:00: live model probability; at/after 20:00: immutable snapshot.
+ // Missing/invalid model: show price only, NEVER a stale or invented %.
+ const tabForecast=snap?.status==='OK'?{kind:snap.kind,probability:snap.prediction?.probability}:null;
+ updateBtcTabTitle(extractQuotePrice(),document,tabForecast);
  const frozen=!pre;
  const activeKind=snap?.kind??(snap?.daily?.above?'頂齊':snap?.daily?.above===false?'底齊':null);
  const labels=getDirectionLabels(activeKind);

@@ -62,7 +62,7 @@ test('changing current TOP turns off the old, fades to the new marker; absent vi
  }finally{globalThis.document=previous;}
 });
 
-test('v1.2.8 active-only animation further tightens to 13px / 10px and slows to 2.4s, leaving NOW at 1.8s',()=>{
+test('v1.2.9 active-only animation further tightens to 13px / 10px and slows to 2.4s, leaving NOW at 1.8s',()=>{
  const oldDoc=globalThis.document;globalThis.document={createElementNS(_ns,tag){return element(tag);}};
  try{
   const svg=element();renderCandles4h(svg,bars,null,{now,currentPrice:83000,pivots,activeBarriers:[pivots[0],pivots[1]]});

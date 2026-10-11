@@ -1,6 +1,6 @@
 {
   "app": "BTC 4H Breakout Pulse",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "release": "2026-10-11",
   "model": "v6.0",
   "timeZone": "Asia/Taipei",
@@ -8,5 +8,5 @@
   "settleAt": "00:00",
   "tabQuoteIntervalSeconds": 10,
   "deployment": "GitHub Pages static",
-  "focus": "Tighter active turn pulse radius halo 8–13 (was 9–15), ring 7–10 (was 8–12); slower SVG 2.4s and card 2.6s. NOW 1.8s unchanged."
+  "focus": "Dynamic browser title BTC live Pionex quote | current 4H predicted breakout/breakdown probability; freeze-compatible"
 }
