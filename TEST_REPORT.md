@@ -1,21 +1,20 @@
-# BTC4HBreakoutPulse v1.2.9｜動態分頁籤報價＋機率
+# v1.2.10｜有效 K 線繪圖區加寬測試紀錄
 
-## 需求與已驗證行為
+- 修改 `src/chart.js` 固定座標：W 1200→1410；LEFT 61→58；RIGHT 1061→1270；GUTTER 1070→1279。
+- 修改 `styles.css` SVG 原始寬高比與桌面高度限制，避免 `preserveAspectRatio="meet"` 產生左右 letterbox。
+- 保留 48 根 K 棒、Pionex 4H 歷史、十字游標、頂底齊轉折懸停、Active 呼吸光、NOW 價格與 20:00 凍結。
 
-- 使用與首頁 `NOW` 相同的 Pionex BTC_USDT_PERP 報價，與首頁大字機率相同的 v6.0 預測結果，不另行抓取或運算一組機率。
-- 中軌之下：`BTC 83,032.9｜7.4% 跌破`。
-- 中軌之上：`BTC 87,052.1｜54.2% 突破`。
-- Pionex 報價每 10 秒取得，分頁籤跟著最新報價同步更新；20:00 前機率隨模型動態更新。
-- 20:00 後讀取已凍結的原始預測，分頁籤機率固定，但價格每 10 秒仍更新。
-- 預測缺資料、無有效 4H 關卡、無法有效產生機率時，只顯示 `BTC 價格`，不能顯示舊機率或虛構機率。
-- 不改 K 線來源、模型權重、Active 呼吸動畫或圖表排版。
+## 原有程式測試
 
-## 執行測試
+`node --test tests/*.test.mjs` → **40/40 通過**。
 
-1. `node --test tests/*.test.mjs`：40／40 通過。包含既有 Pionex API / 歷史 K 線 / 20:00 凍結 / 131 組 v6.0 對照與新增的分頁籤測試。
-2. `python tests/tab_title_browser.py`：Chromium 真實 `document.title` 測試通過；模擬漲跌方向、價格更新、凍結不改機率、無訊號退回只顯示價格。
-3. `python tests/active_pivots_browser.py`：Chromium 圖表舊功能回歸測試通過（Active 紅綠呼吸、懸停、切換 active、報價重繪、NOW）。
+## Chromium 真實像素量測（相同歷史 Pionex 格式資料）
 
-## 局限
+| 寬度 | 修改前 K 線實際繪製寬度 | 修改後 | 差異 |
+|---|---:|---:|---:|
+| 1280px | 809.9px | 1050.4px | +29.7% |
+| 1440px | 1012.3px | 1187.9px | +17.3% |
 
-Chromium 分頁籤測試使用模擬輸入；Pionex 網路取數使用既有程式路徑，不代表已在使用者的線上 GitHub Pages 以真實 API 完成現場驗證。原有 v6.0 Binance 現貨訓練與 Pionex 永續報價的校準限制維持不變。
+`python tests/chart_edge_geometry_browser.py` → 1280×720、1366×768、1440×900、1600×900 通過；390×844 無水平溢出。檢查包含：真實 SVG 的 CTM、圖表左軸位置、NOW 標籤離右界距離、是否存在左右 letterbox、捲軸、48 根 K 棒及虛線懸停元素。
+
+**測試資料是本地 fixture，沒有宣稱已驗證線上 Worker。**

@@ -34,7 +34,7 @@ test('large SVG keeps price label and breathing orb; barrier label is NOT render
    const svg=node();const data=candles();const target={kind,level:81650};
    renderCandles4h(svg,data,target,{now,currentPrice:82130});
    let all=flatten(svg);
-   assert.equal(svg.attrs.viewBox,'0 0 1200 405');
+   assert.equal(svg.attrs.viewBox,'0 0 1410 405');
    assert.ok(all.some(x=>x.tag==='text'&&x.textContent==='NOW 82,130.0'));
    assert.ok(!all.some(x=>x.tag==='text'&&x.textContent===`${kind} 81,650.0`),'never a persistent barrier label');
    assert.ok(all.some(x=>x.attrs.stroke==='#23d7ee'&&x.attrs['stroke-dasharray']==='8 7'));
@@ -72,7 +72,7 @@ test('hover tooltip tracks pointer X in chart coordinates and NEVER occupies the
    renderCandles4h(svg,data,{kind,level:82130},{now,currentPrice:82130});
    const hit=flatten(svg).find(x=>x.attrs['data-role']==='barrier-hover-hit');
    assert.ok(hit);
-   assert.equal(hit.attrs.x2,'1061','hover coverage ends at plot boundary, not NOW gutter');
+   assert.equal(hit.attrs.x2,'1270','hover coverage ends at plot boundary, not NOW gutter');
    const rects=[];
    for(const x of [140,540,1030]){
     hit.dispatch('pointermove',{svgX:x,svgY:Number(hit.attrs.y1)});
@@ -80,7 +80,7 @@ test('hover tooltip tracks pointer X in chart coordinates and NEVER occupies the
     assert.ok(tooltip);
     const tx=Number(tooltip.attrs['data-tooltip-x']);
     rects.push(tx);
-    assert.ok(tx>=61&&tx+136<=1061,'floating label stays inside plot to avoid NOW label overlap');
+    assert.ok(tx>=58&&tx+136<=1270,'floating label stays inside plot to avoid NOW label overlap');
     assert.equal(flatten(svg).filter(x=>x.textContent===`${kind} 82,130.0`).length,1);
    }
    assert.ok(rects[0]<rects[1]&&rects[1]<rects[2],`tooltip must MOVE left-to-right with mouse, got ${rects}`);
@@ -88,7 +88,7 @@ test('hover tooltip tracks pointer X in chart coordinates and NEVER occupies the
    assert.equal(flatten(svg).filter(x=>x.attrs['data-role']==='barrier-tooltip').length,0);
   }
   // The geometry is clamped away from the RIGHT gutter, no matter where the cursor is.
-  assert.ok(hoverTooltipGeometry(1100,200).x+136<1070);
+  assert.ok(hoverTooltipGeometry(1400,200).x+136<1279);
  }finally{globalThis.document=prev;}
 });
 
@@ -155,9 +155,9 @@ test('TradingView top strip prints Taiwan local time, O H L C change and volume'
  const s=formatChartOhlc(bar);
  assert.match(s,/2026-10-11 12:00/);
  for(const c of ['開 82,000.0','高 83,300.0','低 81,500.0','收 82,600.0','+0.73%','量 9.97K'])assert.ok(s.includes(c),c);
- assert.equal(chartHoverCandleIndex(61,40,25),0);
- assert.equal(chartHoverCandleIndex(61+25*21+.2,40,25),21);
- assert.equal(chartHoverCandleIndex(1060,40,25),39);
+ assert.equal(chartHoverCandleIndex(58,40,25),0);
+ assert.equal(chartHoverCandleIndex(58+25*21+.2,40,25),21);
+ assert.equal(chartHoverCandleIndex(1270,40,25),39);
 });
 test('chart creates hover crosshair and historic pivot extension only when pointer enters turn mark',()=>{
  const prev=globalThis.document;globalThis.document={createElementNS(_ns,t){return node(t);}};
@@ -180,7 +180,7 @@ test('chart creates hover crosshair and historic pivot extension only when point
   assert.equal(nodes.filter(x=>x.attrs['data-role']==='pivot-extension-line').length,1);
   const line=nodes.find(x=>x.attrs['data-role']==='pivot-extension-line');
   assert.equal(line.attrs.x1,'0','pivot guide crosses center of left price-axis tag, not turning bar');
-  assert.equal(line.attrs.x2,'1070');
+  assert.equal(line.attrs.x2,'1279');
   assert.equal(line.attrs.stroke,'#f27585');
   const priceBox=flatten(cross).find(x=>x.tag==='rect'&&x.attrs.x==='2');
   const cursorH=flatten(cross).find(x=>x.tag==='line'&&x.attrs.opacity==='0.76');
@@ -195,7 +195,7 @@ test('chart creates hover crosshair and historic pivot extension only when point
   const tagRect=axisTag.children.find(x=>x.tag==='rect');
   assert.equal(Number(tagRect.attrs.y)+Number(tagRect.attrs.height)/2,Number(line.attrs.y1),'dashed line intersects exact vertical center');
   assert.equal(Number(tagRect.attrs.x),1);
-  assert.equal(Number(tagRect.attrs.x)+Number(tagRect.attrs.width),60);
+  assert.equal(Number(tagRect.attrs.x)+Number(tagRect.attrs.width),57);
   assert.ok(nodes.some(x=>x.tag==='text'&&x.textContent===Number(pivot.level).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})));
   hit.dispatch('pointerleave');
   assert.equal(flatten(svg).filter(x=>x.attrs['data-role']==='pivot-extension-line').length,0);

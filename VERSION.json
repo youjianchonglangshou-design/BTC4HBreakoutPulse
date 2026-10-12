@@ -1,12 +1,12 @@
 {
   "app": "BTC 4H Breakout Pulse",
-  "version": "1.2.9",
-  "release": "2026-10-11",
+  "version": "1.2.10",
+  "release": "2026-10-12",
   "model": "v6.0",
   "timeZone": "Asia/Taipei",
   "freezeAt": "20:00",
   "settleAt": "00:00",
   "tabQuoteIntervalSeconds": 10,
   "deployment": "GitHub Pages static",
-  "focus": "Dynamic browser title BTC live Pionex quote | current 4H predicted breakout/breakdown probability; freeze-compatible"
+  "focus": "True SVG draw-area widening (1200→1410, plot 1000→1212), remove desktop letterboxing; preserve 48 Pionex 4H candles and NOW right-side label"
 }

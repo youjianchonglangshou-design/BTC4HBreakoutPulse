@@ -1,7 +1,7 @@
 import {normalizeBars} from './market.js';
 
 /** Pionex-only presentation. Current unfinished 4H is DISPLAY ONLY, never an alignment confirmation. */
-const W=1200,H=405,LEFT=61,RIGHT=1061,TOP=21,BOTTOM=354,GUTTER=1070;
+const W=1410,H=405,LEFT=58,RIGHT=1270,TOP=21,BOTTOM=354,GUTTER=1279;
 const OHLC_MS=4*3600_000;
 const cache=new WeakMap();
 const hoverState=new WeakMap();
