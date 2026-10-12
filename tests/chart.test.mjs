@@ -64,31 +64,25 @@ test('large SVG keeps price label and breathing orb; barrier label is NOT render
  }finally{globalThis.document=prev;}
 });
 
-test('hover tooltip tracks pointer X in chart coordinates and NEVER occupies the NOW right gutter, even when level equals price',()=>{
+test('selected line label uses RIGHT axis; hover has priority over overlapping NOW, and restores NOW afterward',()=>{
  const prev=globalThis.document;globalThis.document={createElementNS(_ns,t){return node(t);}};
  try{
   for(const kind of ['底齊','頂齊']){
    const svg=node(),data=candles();
    renderCandles4h(svg,data,{kind,level:82130},{now,currentPrice:82130});
    const hit=flatten(svg).find(x=>x.attrs['data-role']==='barrier-hover-hit');
-   assert.ok(hit);
-   assert.equal(hit.attrs.x2,'1270','hover coverage ends at plot boundary, not NOW gutter');
-   const rects=[];
-   for(const x of [140,540,1030]){
-    hit.dispatch('pointermove',{svgX:x,svgY:Number(hit.attrs.y1)});
-    const tooltip=flatten(svg).find(x=>x.attrs['data-role']==='barrier-tooltip');
-    assert.ok(tooltip);
-    const tx=Number(tooltip.attrs['data-tooltip-x']);
-    rects.push(tx);
-    assert.ok(tx>=58&&tx+136<=1270,'floating label stays inside plot to avoid NOW label overlap');
-    assert.equal(flatten(svg).filter(x=>x.textContent===`${kind} 82,130.0`).length,1);
-   }
-   assert.ok(rects[0]<rects[1]&&rects[1]<rects[2],`tooltip must MOVE left-to-right with mouse, got ${rects}`);
+   const nowTag=flatten(svg).find(x=>x.attrs['data-role']==='now-price-label');
+   assert.ok(hit);assert.ok(nowTag);
+   assert.equal(hit.attrs.x2,'1270');
+   hit.dispatch('pointerenter',{svgX:540,svgY:Number(hit.attrs.y1)});
+   const tag=flatten(svg).find(x=>x.attrs['data-role']==='barrier-tooltip');
+   assert.ok(tag,'structure tag is on RIGHT price scale');
+   assert.equal(tag.children[0].attrs.x,'1287');
+   assert.equal(nowTag.attrs.visibility,'hidden','NOW label must be covered when same price');
    hit.dispatch('pointerleave');
    assert.equal(flatten(svg).filter(x=>x.attrs['data-role']==='barrier-tooltip').length,0);
+   assert.equal(nowTag.attrs.visibility,'visible','NOW comes back after focus leaves');
   }
-  // The geometry is clamped away from the RIGHT gutter, no matter where the cursor is.
-  assert.ok(hoverTooltipGeometry(1400,200).x+136<1279);
  }finally{globalThis.document=prev;}
 });
 
@@ -155,8 +149,8 @@ test('TradingView top strip prints Taiwan local time, O H L C change and volume'
  const s=formatChartOhlc(bar);
  assert.match(s,/2026-10-11 12:00/);
  for(const c of ['開 82,000.0','高 83,300.0','低 81,500.0','收 82,600.0','+0.73%','量 9.97K'])assert.ok(s.includes(c),c);
- assert.equal(chartHoverCandleIndex(58,40,25),0);
- assert.equal(chartHoverCandleIndex(58+25*21+.2,40,25),21);
+ assert.equal(chartHoverCandleIndex(8,40,25),0);
+ assert.equal(chartHoverCandleIndex(8+25*21+.2,40,25),21);
  assert.equal(chartHoverCandleIndex(1270,40,25),39);
 });
 test('chart creates hover crosshair and historic pivot extension only when pointer enters turn mark',()=>{
@@ -179,10 +173,10 @@ test('chart creates hover crosshair and historic pivot extension only when point
   nodes=flatten(svg);
   assert.equal(nodes.filter(x=>x.attrs['data-role']==='pivot-extension-line').length,1);
   const line=nodes.find(x=>x.attrs['data-role']==='pivot-extension-line');
-  assert.equal(line.attrs.x1,'0','pivot guide crosses center of left price-axis tag, not turning bar');
+  assert.equal(line.attrs.x1,'8','pivot line starts at candle area left margin');
   assert.equal(line.attrs.x2,'1279');
   assert.equal(line.attrs.stroke,'#f27585');
-  const priceBox=flatten(cross).find(x=>x.tag==='rect'&&x.attrs.x==='2');
+  const priceBox=flatten(cross).find(x=>x.tag==='rect'&&x.attrs.x==='1287');
   const cursorH=flatten(cross).find(x=>x.tag==='line'&&x.attrs.opacity==='0.76');
   assert.ok(priceBox&&cursorH);
   assert.equal(priceBox.attrs.visibility,'hidden','generic cursor price tag hidden while hovering pivot');
@@ -190,13 +184,13 @@ test('chart creates hover crosshair and historic pivot extension only when point
   assert.equal(cross.attrs['data-pivot-focus'],'true');
 
   const axisTag=nodes.find(x=>x.attrs['data-role']==='pivot-axis-price-tag');
-  assert.ok(axisTag,'dedicated left-axis price tag must be present');
+  assert.ok(axisTag,'dedicated RIGHT-axis price tag must be present');
   assert.equal(axisTag.attrs['data-kind'],'頂齊');
   const tagRect=axisTag.children.find(x=>x.tag==='rect');
   assert.equal(Number(tagRect.attrs.y)+Number(tagRect.attrs.height)/2,Number(line.attrs.y1),'dashed line intersects exact vertical center');
-  assert.equal(Number(tagRect.attrs.x),1);
-  assert.equal(Number(tagRect.attrs.x)+Number(tagRect.attrs.width),57);
-  assert.ok(nodes.some(x=>x.tag==='text'&&x.textContent===Number(pivot.level).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1})));
+  assert.equal(Number(tagRect.attrs.x),1287);
+  assert.equal(Number(tagRect.attrs.x)+Number(tagRect.attrs.width),1400);
+  assert.ok(nodes.some(x=>x.tag==='text'&&x.textContent==='頂齊 '+Number(pivot.level).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1}))); 
   hit.dispatch('pointerleave');
   assert.equal(flatten(svg).filter(x=>x.attrs['data-role']==='pivot-extension-line').length,0);
   assert.equal(priceBox.attrs.visibility,'visible','generic price tag restored on pivot leave');
@@ -204,4 +198,15 @@ test('chart creates hover crosshair and historic pivot extension only when point
   svg.dispatch('pointerleave');
   assert.equal(cross.attrs.visibility,'hidden');
  }finally{globalThis.document=prev;}
+});
+
+import {chartLayout,axisLabelOverlaps} from '../src/chart.js';
+test('50-bar right-price-scale geometry preserves horizontal candle width and exact collision rules',()=>{
+ assert.equal(chartLayout.count,50);
+ assert.equal(chartLayout.left,8);
+ assert.equal(chartLayout.right,1270);
+ assert.ok(Math.abs((chartLayout.right-chartLayout.left)/50-(1270-58)/48)<.02);
+ assert.equal(buildVisibleCandles(candles(70),now).length,50);
+ assert.equal(axisLabelOverlaps(140,22,140,25),true);
+ assert.equal(axisLabelOverlaps(140,22,220,25),false);
 });

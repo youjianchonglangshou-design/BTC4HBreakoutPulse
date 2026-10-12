@@ -10,7 +10,7 @@ html=re.sub(r'<link rel="stylesheet"[^>]*>', '', html)
 html=re.sub(r'<script type="module"[^>]*></script>', '', html)
 css=(root/'styles.css').read_text()
 js_chart=(root/'src/chart.js').read_text().replace("import {normalizeBars} from './market.js';", "const normalizeBars = xs=>[...(xs||[])].sort((a,b)=>a.ts-b.ts);")
-js_chart=js_chart.replace('export function ', 'function ')+'\nwindow.renderCandles4h=renderCandles4h;'
+js_chart=js_chart.replace('export function ', 'function ').replace('export const chartLayout','const chartLayout')+'\nwindow.renderCandles4h=renderCandles4h;'
 fixture_src=(root/'tests/turn_markers_browser.py').read_text()
 init=re.search(r"js='''(\(\) => \{.*?\})'''",fixture_src,re.S)
 assert init,'Synthetic fixture missing'
@@ -47,14 +47,14 @@ with sync_playwright() as p:
   rect=tag.locator('rect')
   yy=float(line.get_attribute('y1'))
   assert float(line.get_attribute('y2'))==yy
-  assert line.get_attribute('x1')=='0', f'{kind}: line should extend through left axis'
-  assert line.get_attribute('x2')=='1070'
+  assert line.get_attribute('x1')=='8', f'{kind}: line should extend through left axis'
+  assert line.get_attribute('x2')=='1279'
   assert tag.get_attribute('data-kind')==kind
   assert line.get_attribute('stroke')==color
   boxy=float(rect.get_attribute('y'));h=float(rect.get_attribute('height'))
   assert boxy+h/2==yy, f'{kind}: line {yy} vs label center {boxy+h/2}'
-  assert float(rect.get_attribute('x'))==1
-  assert float(rect.get_attribute('x'))+float(rect.get_attribute('width'))==60
+  assert float(rect.get_attribute('x'))==1287
+  assert float(rect.get_attribute('x'))+float(rect.get_attribute('width'))==1400
   assert tag.locator('text').count()==1
   assert svg.locator('text').filter(has_text='NOW').count()==1
   cross=svg.locator('[data-role=chart-crosshair]')

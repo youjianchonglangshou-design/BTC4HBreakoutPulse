@@ -56,9 +56,11 @@ test('GitHub Pages entry loads Pionex chart 4H/15M/1D and Pionex quote; below mi
   assert.match(p,/\d+\.\d%/,`probability: ${p}; info: ${elements.get('explanation')?.textContent}; err:${elements.get('error')?.textContent}`);
   assert.equal(elements.has('livePrice'),false,'Removed the old header quote');
   const chartChildren=elements.get('candles').children;
-  assert.ok(chartChildren.some(x=>x.textContent==='NOW 86,223.4'),'Live quote is written INSIDE the Pionex 4H SVG');
-  assert.ok(chartChildren.some(x=>x.attrs['stroke-dasharray']==='8 7'&&x.attrs.stroke==='#23d7ee'),'Live horizontal cyan price line');
-  assert.ok(chartChildren.some(x=>x.attrs.stroke==='#26d9e9'),'Live price tag is outlined');
+  const deep=els=>els.flatMap(e=>[e,...deep(e.children||[])]);
+  const chartNodes=deep(chartChildren);
+  assert.ok(chartNodes.some(x=>x.textContent==='NOW 86,223.4'),'Live quote is written INSIDE the Pionex 4H SVG');
+  assert.ok(chartNodes.some(x=>x.attrs['stroke-dasharray']==='8 7'&&x.attrs.stroke==='#23d7ee'),'Live horizontal cyan price line');
+  assert.ok(chartNodes.some(x=>x.attrs.stroke==='#26d9e9'),'Live price tag is outlined');
   const tabDirection=elements.get('midState').textContent.includes('中軌之下')?'跌破':'突破';
   assert.equal(globalThis.document.title,`BTC 86,223.4｜${p} ${tabDirection}`);
   assert.match(elements.get('midState').textContent,/中軌之/);

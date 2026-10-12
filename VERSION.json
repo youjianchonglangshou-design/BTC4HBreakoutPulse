@@ -1,6 +1,6 @@
 {
   "app": "BTC 4H Breakout Pulse",
-  "version": "1.2.10",
+  "version": "1.2.11",
   "release": "2026-10-12",
   "model": "v6.0",
   "timeZone": "Asia/Taipei",
@@ -8,5 +8,5 @@
   "settleAt": "00:00",
   "tabQuoteIntervalSeconds": 10,
   "deployment": "GitHub Pages static",
-  "focus": "True SVG draw-area widening (1200→1410, plot 1000→1212), remove desktop letterboxing; preserve 48 Pionex 4H candles and NOW right-side label"
+  "focus": "TradingView-style right price axis, 50 same-width Pionex 4H candles, priority pivot/barrier > cursor > NOW only on overlapping right-side tags"
 }

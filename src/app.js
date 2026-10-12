@@ -4,7 +4,7 @@ import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
 import {selectFirstBarrier,scanHistoricalAlignments} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.2.10';
+import {renderCandles4h} from './chart.js?v=1.2.11';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 import {probabilityTone,contextTone} from './semantic.js';
@@ -136,7 +136,7 @@ function renderLevels(pred,now){
  // The forming Pionex 4H candle and 10-second quote affect only the chart.
  // Confirmed barriers, history, and frozen forecast never use this forming candle.
  const liveBar=S.fourHour.find(b=>b.ts<=Date.now()&&b.ts+FOUR_HOURS>Date.now())||null;
- // The chart can show every CONFIRMED historical 4H turn in its visible 48-bar window.
+ // The chart can show every CONFIRMED historical 4H turn in its visible 50-bar window.
  // Keep the turn's original timestamp; confirmation may occur one to three candles later.
  const pivotKey=`${S.historyFetched.fourHour||0}|${last.length}|${last.at(-1)?.ts??0}`;
  if(S.pivotCache?.key!==pivotKey){

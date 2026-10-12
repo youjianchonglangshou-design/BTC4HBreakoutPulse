@@ -8,7 +8,7 @@ html=re.sub(r'<link rel="stylesheet"[^>]*>', '', html)
 html=re.sub(r'<script type="module"[^>]*></script>', '', html)
 css=(base/'styles.css').read_text()
 js_chart=(base/'src/chart.js').read_text().replace("import {normalizeBars} from './market.js';", "const normalizeBars = xs=>[...(xs||[])].sort((a,b)=>a.ts-b.ts);")
-js_chart=js_chart.replace('export function ', 'function ')+"\nwindow.renderCandles4h=renderCandles4h;"
+js_chart=js_chart.replace('export function ', 'function ').replace('export const chartLayout','const chartLayout')+"\nwindow.renderCandles4h=renderCandles4h;"
 # Reuse the confirmed source/turn/third-bar synthetic data from the existing browser acceptance test.
 test_src=(base/'tests/turn_markers_browser.py').read_text()
 init=re.search(r"js='''(\(\) => \{.*?\})'''",test_src,re.S)
@@ -51,8 +51,8 @@ with sync_playwright() as p:
   over=svg.locator('[data-role=pivot-level-overlay]')
   line=over.locator('[data-role=pivot-extension-line]')
   assert line.get_attribute('stroke')==col
-  assert line.get_attribute('x1')=='0','horizontal guide must pass through left price label center, not begin at turning candle'
-  assert line.get_attribute('x2')=='1070','extend right to price gutter'
+  assert line.get_attribute('x1')=='8','horizontal guide must pass through left price label center, not begin at turning candle'
+  assert line.get_attribute('x2')=='1279','extend right to price gutter'
   assert over.locator('[data-role=pivot-axis-price-tag]').count()==1
   tag=over.locator('[data-role=pivot-axis-price-tag]')
   rect=tag.locator('rect')

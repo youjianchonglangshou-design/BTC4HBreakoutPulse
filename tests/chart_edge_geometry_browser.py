@@ -27,7 +27,7 @@ with sync_playwright() as p:
   }''',{'bars':fixture['fourHour'][-58:],'now':fixture['cut']})
   result=page.evaluate('''()=>{
    const svg=document.getElementById('candles'), b=svg.getBoundingClientRect(),t=svg.getScreenCTM();
-   const tick=t.a*58+t.e, plotRight=t.a*1270+t.e;
+   const tick=t.a*8+t.e, plotRight=t.a*1270+t.e;
    const nowRect=[...svg.querySelectorAll('rect')].find(e=>e.getAttribute('fill')==='#0b3444').getBoundingClientRect();
    const marker=svg.querySelector('[data-role="barrier-hover-hit"]');
    return {plotLeft:tick,plotRight,width:plotRight-tick,nowRight:nowRect.right,canvasLeft:b.left,canvasRight:b.right,
@@ -39,10 +39,10 @@ with sync_playwright() as p:
   }''')
   assert not result['overflowX'],f'{width}: horizontal overflow {result}'
   assert not result['overflowY'],f'{width}: vertical overflow {result}'
-  assert result['plotLeft']>=0 and result['plotLeft']-result['canvasLeft']<=65,f'{width}: left price scale still too far inward {result}'
+  assert result['plotLeft']>=0 and result['plotLeft']-result['canvasLeft']<=65,f'{width}: leftmost candle still too far inward {result}'
   assert result['nowRight']<=result['canvasRight'] and result['canvasRight']-result['nowRight']<18,f'{width}: NOW label does not fill right-edge space {result}'
   assert abs(result['letterbox'])<2.1,f'{width}: SVG still letterboxed horizontally {result}'
-  assert result['renderedBars']==48 and result['hoverHit'],f'{width}: visual features missing {result}'
+  assert result['renderedBars']==50 and result['hoverHit'],f'{width}: visual features missing {result}'
   print(width,height,'PASS',json.dumps(result,ensure_ascii=False))
   page.close()
  # On small screens ensure no sideways scrollbar; compact mobile design still fits.

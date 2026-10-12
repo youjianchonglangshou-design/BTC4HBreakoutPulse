@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const html=read('index.html'),css=read('styles.css'),chart=read('src/chart.js'),app=read('src/app.js'),version=JSON.parse(read('VERSION.json'));
-test('v1.2.10: compact chart first, lower row puts structure / daily context LEFT and large probability RIGHT',()=>{
+test('v1.2.11: compact chart first, lower row puts structure / daily context LEFT and large probability RIGHT',()=>{
  assert.match(html,/<section class="pane chart-pane"/);
  assert.ok(html.indexOf('class="chart-pane"')<html.indexOf('class="decision-ribbon"'));
  assert.ok(html.indexOf('class="quick-facts"')<html.indexOf('class="prob-pane"'));
@@ -21,20 +21,20 @@ test('3 popup cards exist, include detailed fields and are hidden until hover/fo
  assert.match(css,/@media\(hover:hover\)\{\.quick-card:hover>\.detail-popover\{display:block\}\}/);
  assert.match(app,/classList\.toggle|classList\.add\('is-open'\)/);
 });
-test('4H live chart 48 bars, compact NOW label, same target line without persistent tag',()=>{
- assert.match(html,/最近 48 根 4H/);
- assert.match(chart,/slice\(-48\)/);
- assert.match(chart,/LEFT=58,RIGHT=1270/);
- assert.match(chart,/width:113,height:25/);
+test('4H live chart 50 bars, compact NOW label, same target line without persistent tag',()=>{
+ assert.match(html,/最近 50 根 4H/);
+ assert.match(chart,/slice\(-VIEW_COUNT\)/);
+ assert.match(chart,/LEFT=8,RIGHT=1270/);
+ assert.match(chart,/width:AXIS_LABEL_WIDTH,height:NOW_HEIGHT/);
  assert.match(chart,/'data-role':'barrier-hover-hit'/);
  assert.match(chart,/data-role':'barrier-tooltip'/);
  assert.match(html,/id="historyStatus"/);
 });
-test('visible version exactly v1.2.10, app cache bust, same Pionex quote frozen probability logic',()=>{
- assert.equal(version.version,'1.2.10');
- assert.match(html,/class="version-mark"[^>]*>v1\.2\.10</);
- assert.match(html,/src\/app\.js\?v=1\.2\.10/);
- assert.match(app,/src\/chart\.js\?v=1\.2\.10|\.\/chart\.js\?v=1\.2\.10/);
+test('visible version exactly v1.2.11, app cache bust, same Pionex quote frozen probability logic',()=>{
+ assert.equal(version.version,'1.2.11');
+ assert.match(html,/class="version-mark"[^>]*>v1\.2\.11</);
+ assert.match(html,/src\/app\.js\?v=1\.2\.11/);
+ assert.match(app,/src\/chart\.js\?v=1\.2\.11|\.\/chart\.js\?v=1\.2\.11/);
  assert.match(app,/10000\)/);
  assert.match(app,/freezeForDay/);
  assert.doesNotMatch(html,/Binance Spot · 最近/);

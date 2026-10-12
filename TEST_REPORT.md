@@ -1,20 +1,12 @@
-# v1.2.10｜有效 K 線繪圖區加寬測試紀錄
+# BTC4HBreakoutPulse v1.2.11｜右側價軸與標籤優先權
 
-- 修改 `src/chart.js` 固定座標：W 1200→1410；LEFT 61→58；RIGHT 1061→1270；GUTTER 1070→1279。
-- 修改 `styles.css` SVG 原始寬高比與桌面高度限制，避免 `preserveAspectRatio="meet"` 產生左右 letterbox。
-- 保留 48 根 K 棒、Pionex 4H 歷史、十字游標、頂底齊轉折懸停、Active 呼吸光、NOW 價格與 20:00 凍結。
-
-## 原有程式測試
-
-`node --test tests/*.test.mjs` → **40/40 通過**。
-
-## Chromium 真實像素量測（相同歷史 Pionex 格式資料）
-
-| 寬度 | 修改前 K 線實際繪製寬度 | 修改後 | 差異 |
-|---|---:|---:|---:|
-| 1280px | 809.9px | 1050.4px | +29.7% |
-| 1440px | 1012.3px | 1187.9px | +17.3% |
-
-`python tests/chart_edge_geometry_browser.py` → 1280×720、1366×768、1440×900、1600×900 通過；390×844 無水平溢出。檢查包含：真實 SVG 的 CTM、圖表左軸位置、NOW 標籤離右界距離、是否存在左右 letterbox、捲軸、48 根 K 棒及虛線懸停元素。
-
-**測試資料是本地 fixture，沒有宣稱已驗證線上 Worker。**
+* 原有及更新 Node 自動化測試：`node --test tests/*.test.mjs`，40/40 通過。
+* Chromium 右側價軸驗收：`python tests/right_axis_priority_browser.py`，通過。
+  - 50 根與相同 K 棒間距；刻度位於右側。
+  - 游標價與 NOW 重疊時游標價優先，不重疊則 NOW 保留，游標離開恢復 NOW。
+  - 頂齊／底齊原始轉折 hover 時，結構價在右側，水平虛線穿過標籤中心。
+  - 結構價格與 NOW 完全同價時結構優先；不同價時各自顯示。
+  - 預測關卡水平線 hover 時同樣結構優先。
+  - 滑鼠離開時即時清除懸停標籤。
+* 合成 Pionex 格式 4H K 棒供離線測試；正式 Pionex Worker 網路連線需部署後確認。
+* 本次只改價格軸和顯示優先權，未改選線、模型及凍結。
