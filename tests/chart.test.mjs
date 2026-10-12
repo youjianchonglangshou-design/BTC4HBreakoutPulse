@@ -78,10 +78,10 @@ test('selected line label uses RIGHT axis; hover has priority over overlapping N
    const tag=flatten(svg).find(x=>x.attrs['data-role']==='barrier-tooltip');
    assert.ok(tag,'structure tag is on RIGHT price scale');
    assert.equal(tag.children[0].attrs.x,'1287');
-   assert.equal(nowTag.attrs.visibility,'hidden','NOW label must be covered when same price');
+   assert.equal(nowTag.attrs.visibility,'visible','NOW stays visible under the focused tooltip even at identical prices');
    hit.dispatch('pointerleave');
    assert.equal(flatten(svg).filter(x=>x.attrs['data-role']==='barrier-tooltip').length,0);
-   assert.equal(nowTag.attrs.visibility,'visible','NOW comes back after focus leaves');
+   assert.equal(nowTag.attrs.visibility,'visible','NOW stays visible after focus leaves');
   }
  }finally{globalThis.document=prev;}
 });

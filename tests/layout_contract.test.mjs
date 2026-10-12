@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const html=read('index.html'),css=read('styles.css'),chart=read('src/chart.js'),app=read('src/app.js'),version=JSON.parse(read('VERSION.json'));
-test('v1.2.11: compact chart first, lower row puts structure / daily context LEFT and large probability RIGHT',()=>{
+test('v1.2.12: compact chart first, lower row puts structure / daily context LEFT and large probability RIGHT',()=>{
  assert.match(html,/<section class="pane chart-pane"/);
  assert.ok(html.indexOf('class="chart-pane"')<html.indexOf('class="decision-ribbon"'));
  assert.ok(html.indexOf('class="quick-facts"')<html.indexOf('class="prob-pane"'));
@@ -30,11 +30,11 @@ test('4H live chart 50 bars, compact NOW label, same target line without persist
  assert.match(chart,/data-role':'barrier-tooltip'/);
  assert.match(html,/id="historyStatus"/);
 });
-test('visible version exactly v1.2.11, app cache bust, same Pionex quote frozen probability logic',()=>{
- assert.equal(version.version,'1.2.11');
- assert.match(html,/class="version-mark"[^>]*>v1\.2\.11</);
- assert.match(html,/src\/app\.js\?v=1\.2\.11/);
- assert.match(app,/src\/chart\.js\?v=1\.2\.11|\.\/chart\.js\?v=1\.2\.11/);
+test('visible version exactly v1.2.12, app cache bust, same Pionex quote frozen probability logic',()=>{
+ assert.equal(version.version,'1.2.12');
+ assert.match(html,/class="version-mark"[^>]*>v1\.2\.12</);
+ assert.match(html,/src\/app\.js\?v=1\.2\.12/);
+ assert.match(app,/src\/chart\.js\?v=1\.2\.12|\.\/chart\.js\?v=1\.2\.12/);
  assert.match(app,/10000\)/);
  assert.match(app,/freezeForDay/);
  assert.doesNotMatch(html,/Binance Spot · 最近/);

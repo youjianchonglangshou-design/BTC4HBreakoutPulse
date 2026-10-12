@@ -7,7 +7,7 @@ const VIEW_COUNT=50;
 const AXIS_LABEL_X=GUTTER+8,AXIS_LABEL_WIDTH=113;
 const CROSS_HEIGHT=22,NOW_HEIGHT=25;
 export const chartLayout={width:W,height:H,left:LEFT,right:RIGHT,gutter:GUTTER,count:VIEW_COUNT};
-/** Tag priority: pivot / selected structure > generic cursor > NOW; only overlap hides NOW. */
+/** Draw priority: pivot / selected structure > generic cursor > NOW. NOW is NEVER hidden; labels are painted on top. */
 export function axisLabelOverlaps(yA,heightA,yB,heightB,gap=3){
  return Number.isFinite(yA)&&Number.isFinite(yB)&&Math.abs(yA-yB)<=(heightA+heightB)/2+gap;
 }
@@ -174,16 +174,16 @@ export function renderCandles4h(svg,bars,target,opts={}){
  add('rect',{x:RIGHT+13,y:TOP-9,width:W-RIGHT-18,height:BOTTOM-TOP+18,rx:10,fill:'#071725'});
  add('line',{x1:RIGHT+7,x2:RIGHT+7,y1:TOP-10,y2:BOTTOM+10,stroke:'#30526a','stroke-width':1,'stroke-dasharray':'4 6'});
  // Price scale moved to the RIGHT. Keep a compact margin on the left for more candles.
- // NOW stays present except while a higher-priority axis tag overlaps its label.
+ // NOW always stays rendered, even when an active cursor / pivot / barrier label paints over it.
  const axisTicks=[];
  let nowTagGroup=null;
  let nowY=null;
  let focusLabel=null; // {kind, y, height}: pivot, barrier, or generic mouse cursor.
  function syncRightAxis(){
-  const nowOverlapped=focusLabel&&axisLabelOverlaps(focusLabel.y,focusLabel.height,nowY,NOW_HEIGHT);
-  nowTagGroup?.setAttribute('visibility',nowOverlapped?'hidden':'visible');
+  // No visibility toggling based on distance: overlays are drawn later in SVG paint order.
+  nowTagGroup?.setAttribute('visibility','visible');
   for(const tick of axisTicks){
-   const conflictNow=nowY!==null&&!nowOverlapped&&axisLabelOverlaps(tick.y,12,nowY,NOW_HEIGHT);
+   const conflictNow=nowY!==null&&axisLabelOverlaps(tick.y,12,nowY,NOW_HEIGHT);
    const conflictFocus=focusLabel&&axisLabelOverlaps(tick.y,12,focusLabel.y,focusLabel.height);
    tick.node.setAttribute('visibility',(conflictNow||conflictFocus)?'hidden':'visible');
   }
@@ -419,7 +419,7 @@ export function renderCandles4h(svg,bars,target,opts={}){
     'text-anchor':'middle'},tag);
    pivotActive=pivot.id;
   }
-  // Higher-priority structure label covers NOW only if the two actually overlap.
+  // Structural price tooltip is painted above NOW; NOW always remains in the SVG.
   focusLabel={kind:'pivot',y:yLine,height:AXIS_TAG_HEIGHT};
   syncRightAxis();
   pivotOverlay.setAttribute('data-tooltip-x',AXIS_TAG_X);

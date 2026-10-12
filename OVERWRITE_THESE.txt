@@ -1,8 +1,7 @@
 【指定儲存庫】
 https://github.com/youjianchonglangshou-design/BTC4HBreakoutPulse
-切勿上傳到 SStateMarketTerminal。
 
-【v1.2.11 需覆蓋檔案】
+【v1.2.12 需覆蓋檔案】
 index.html
 src/chart.js
 src/app.js
@@ -11,18 +10,13 @@ package.json
 README.md
 TEST_REPORT.md
 OVERWRITE_THESE.txt
-tests/app.integration.test.mjs
 tests/chart.test.mjs
-tests/axis_label_contract.test.mjs
 tests/layout_contract.test.mjs
-tests/active_pivots.test.mjs
-tests/chart_edge_geometry_browser.py
 tests/right_axis_priority_browser.py
-tests/pivot_axis_semantics_browser.py
-tests/tradingview_interaction_browser.py
 
-【改動確認】
-- 改右側共用價格刻度；K 線 48→50 根，棒距保持。
-- 游標價與頂底齊價在右側價軸；只有重疊時覆蓋 NOW 價標。
-- 頂齊／底齊結構價 > 一般游標價 > NOW。
-- 20:00 凍結、Pionex 10 秒價格、v6.0 模型不變。
+【本次修改】
+- NOW 標籤保持存在、可見，不再因數值距離接近而隱藏。
+- 游標價／頂齊底齊／預測關卡標籤直接畫在 NOW 上層，重疊時蓋住 NOW。
+- 50 根 K 線、右價軸、10 秒報價與 20:00 凍結均不變。
+
+【注意】不能上傳至 SStateMarketTerminal。
