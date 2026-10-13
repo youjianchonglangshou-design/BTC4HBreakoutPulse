@@ -39,6 +39,11 @@ export function evaluate({fourHour,fifteenMin,daily,model,gate,price,asOf,strict
  const primary={status:'NO_BARRIER',kind,price:spotPrice,atr,daily:dailyState,
     fourCount:four.length,m15Count:m15.length,reason:'沒有符合期限／ATR距離／反覆觸碰上限的已確認4H關卡，不硬湊機率'};
  if(!line)return primary;
+ // The v6 weights were fitted to <=3 ATR obstacles selected by the OLD
+ // algorithm. A newly prioritized recent swing farther away is displayed as
+ // structure, but gets NO fabricated / extrapolated probability.
+ if(line.outsideV6DistanceRange)return {...primary,line,status:'NO_BARRIER',
+   reason:`近期${kind} ${line.level.toFixed(1)} 距現價 ${line.distanceATR.toFixed(2)} ATR；超過舊模型 3 ATR 的訓練選線範圍，暫不提供未校準機率`};
  const fit=calculateV6({kind,level:line.level,price:spotPrice,atr4h:atr,bars15:m15,model,gate});
  if(fit.status!=='OK')return {...primary,status:fit.status,line,reason:'所選4H關卡無法計算v6機率：'+fit.status};
  return {status:'OK',kind,price:spotPrice,atr,daily:dailyState,line,prediction:fit,

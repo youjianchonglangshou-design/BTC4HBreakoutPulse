@@ -1,12 +1,12 @@
 {
   "app": "BTC 4H Breakout Pulse",
-  "version": "1.2.12",
-  "release": "2026-10-12",
+  "version": "1.2.13",
+  "release": "2026-10-13",
   "model": "v6.0",
   "timeZone": "Asia/Taipei",
   "freezeAt": "20:00",
   "settleAt": "00:00",
   "tabQuoteIntervalSeconds": 10,
   "deployment": "GitHub Pages static",
-  "focus": "TradingView-style right price axis, 50 same-width Pionex 4H candles, always-visible NOW beneath any cursor/pivot/barrier right-axis labels, no distance-triggered hiding"
+  "focus": "Structure-first 4H alignment selection: prefer confirmed nearby formation in 50 / 150 / 450 bars before older historical levels. Keep closest forward level within current tier. Never drop >8-touch box supports. Distance outside original 3 ATR v6 domain returns no probability."
 }

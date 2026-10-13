@@ -1,22 +1,12 @@
-【指定儲存庫】
-https://github.com/youjianchonglangshou-design/BTC4HBreakoutPulse
-
-【v1.2.12 需覆蓋檔案】
-index.html
-src/chart.js
-src/app.js
-VERSION.json
-package.json
-README.md
-TEST_REPORT.md
-OVERWRITE_THESE.txt
-tests/chart.test.mjs
-tests/layout_contract.test.mjs
-tests/right_axis_priority_browser.py
-
-【本次修改】
-- NOW 標籤保持存在、可見，不再因數值距離接近而隱藏。
-- 游標價／頂齊底齊／預測關卡標籤直接畫在 NOW 上層，重疊時蓋住 NOW。
-- 50 根 K 線、右價軸、10 秒報價與 20:00 凍結均不變。
-
-【注意】不能上傳至 SStateMarketTerminal。
+請只覆蓋以下檔案到 BTC4HBreakoutPulse（不可上傳至 SStateMarketTerminal）：
+- src/structure.js
+- src/engine.js
+- src/app.js
+- index.html
+- VERSION.json
+- package.json
+- README.md
+- TEST_REPORT.md
+- tests/structure_first.test.mjs
+- tests/layout_contract.test.mjs
+- docs/SELECTION_RULE_V1213.md

@@ -58,18 +58,60 @@ function touchEpisodes(ev,bars,now,zoneTol){
  }
  return {episodes:n,lastTouch: lastTs,crossCount};
 }
-/** Pick lowest unbroken TOP above price or highest unbroken FLOOR below price.  */
-export function selectFirstBarrier(barHistory,asOf,price,atr,kind,{maxAgeDays=365,maxDistanceATR=3,maxTouches=8}={}){
- const {bars,events}=scanHistoricalAlignments(barHistory,asOf);
- const dir=kind==='頂齊'?1:-1;
- const candidates=events.filter(e=>e.kind===kind&&(e.level-price)*dir>0&&asOf-e.confirmed<=maxAgeDays*86400000&&asOf>e.confirmed&&Math.abs(e.level-price)<=maxDistanceATR*atr)
- .sort((a,b)=>dir*(a.level-b.level)||(b.confirmed-a.confirmed));
- for(const ev of candidates){
-  const hist=touchEpisodes(ev,bars,asOf,.0009);
-  if(hist.episodes>maxTouches)continue;
-  return {...ev,...hist,distanceATR:Math.abs(ev.level-price)/atr};
+/**
+ * Structure-first selection, v1.2.13.
+ *
+ * Strictly causal: only confirmed alignments at asOf are eligible.
+ * Recent rotation is more relevant than arbitrary old price coincidences.
+ * If recent bars have no forward-facing alignment, widen the historical search.
+ * No hard max-touch filter: many touches can describe a box / absorption,
+ * rather than making the level disappear from existence.
+ *
+ * This changes the selected sample population. Existing v6 probabilities were
+ * trained on the previous selection rule and MUST be revalidated / calibrated.
+ */
+export const SEARCH_TIERS_4H=Object.freeze([50,150,450,Infinity]);
+export const SELECTION_RULE_VERSION='structure-first-v1';
+
+/** Pure candidate selection, exported for tests and UI diagnostic audits. */
+export function selectStructureCandidate(events,{asOf,price,kind,tiers=SEARCH_TIERS_4H,maxAgeDays=365}={}){
+ const dir=kind==='頂齊'?1:kind==='底齊'?-1:0;
+ if(!dir||!Number.isFinite(price)||price<=0||!Number.isFinite(asOf))return null;
+ const eligible=events.filter(e=>
+   e.kind===kind&&e.confirmed<=asOf&&e.confirmed>0&&e.formed<e.confirmed&&
+   asOf-e.confirmed<=maxAgeDays*86400000&&
+   (e.level-price)*dir>0);
+ // Highest floor below the market / lowest top above the market *within the
+ // first recent window that contains ANY valid, already-confirmed level*.
+ for(const windowBars of tiers){
+   const tier=eligible.filter(e=>!Number.isFinite(windowBars)||asOf-e.formed<=windowBars*14400000);
+   if(!tier.length)continue;
+   tier.sort((a,b)=>dir*(a.level-b.level)||(b.confirmed-a.confirmed));
+   const picked=tier[0];
+   return {...picked,searchWindowBars:windowBars,selectionRule:SELECTION_RULE_VERSION,
+     recentCandidates:tier.length};
  }
  return null;
+}
+
+/**
+ * maxDistanceATR has been RETAINED as old API input but is NOT an eligibility
+ * filter. Rejecting a recently formed barrier just because it is 3+ ATR away
+ * made the engine skip the user's current box and select an unrelated old line.
+ * Instead we return distanceATR / outsideV6DistanceRange so the caller can
+ * report that the original model is outside its validated distance domain.
+ */
+export function selectFirstBarrier(barHistory,asOf,price,atr,kind,{maxAgeDays=365,maxDistanceATR=3,maxTouches=8}={}){
+ if(!Number.isFinite(atr)||atr<=0)return null;
+ const {bars,events}=scanHistoricalAlignments(barHistory,asOf);
+ const chosen=selectStructureCandidate(events,{asOf,price,kind,maxAgeDays});
+ if(!chosen)return null;
+ const hist=touchEpisodes(chosen,bars,asOf,.0009);
+ const distanceATR=Math.abs(chosen.level-price)/atr;
+ return {...chosen,...hist,distanceATR,
+   outsideV6DistanceRange:distanceATR>maxDistanceATR,
+   // Diagnostic only: old hard filter is intentionally disabled.
+   exceedsLegacyTouchLimit:hist.episodes>maxTouches};
 }
 export function predictFromBars({bars,asOf,price,atr,aboveMidline}){
  const kind=aboveMidline?'頂齊':'底齊';

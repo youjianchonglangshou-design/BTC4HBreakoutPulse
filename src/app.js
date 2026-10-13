@@ -4,7 +4,7 @@ import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
 import {selectFirstBarrier,scanHistoricalAlignments} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
 import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.2.12';
+import {renderCandles4h} from './chart.js?v=1.2.13';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 import {probabilityTone,contextTone} from './semantic.js';
@@ -125,7 +125,7 @@ function renderLevels(pred,now){
  for(const [id,line] of [['top',top],['floor',floor]]){
   set(id==='top'?'topLevel':'floorLevel',line?fmt(line.level,1):'尚無有效關卡');
   set(id==='top'?'summaryTop':'summaryFloor',line?fmt(line.level,1):'—');
-  set(id==='top'?'topDetail':'floorDetail',line?`確認 ${tpeTime(line.confirmed).slice(5)} · 測試 ${line.episodes} 回`:'目前無有效關卡');
+  set(id==='top'?'topDetail':'floorDetail',line?`確認 ${tpeTime(line.confirmed).slice(5)} · 測試 ${line.episodes} 回 · ${Number.isFinite(line.searchWindowBars)?`近 ${line.searchWindowBars} 根`:'擴展歷史'}`:'目前無有效關卡');
   set(id==='top'?'topConfirmed':'floorConfirmed',line?tpeTime(line.confirmed):'—');
   set(id==='top'?'topTouches':'floorTouches',line?`${line.episodes} 回`:'—');
   set(id==='top'?'topCrosses':'floorCrosses',line?`${line.crossCount} 次`:'—');
@@ -151,7 +151,7 @@ function renderLevels(pred,now){
   const card=document.querySelector(selector);
   if(card){
    card.setAttribute('data-active',selected?'true':'false');
-   card.title=selected?`目前採用的${selected.kind} ${fmt(selected.level,1)}`:'';
+   card.title=selected?`目前採用的${selected.kind} ${fmt(selected.level,1)}｜選線：${Number.isFinite(selected.searchWindowBars)?`近期 ${selected.searchWindowBars} 根 4H`:'延伸歷史'}`:'';
   }
  }
  renderCandles4h($('candles'),last,target,{currentPrice:extractQuotePrice(),liveBar,now,
