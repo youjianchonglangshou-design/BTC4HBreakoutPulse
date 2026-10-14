@@ -1,12 +1,35 @@
-請只覆蓋以下檔案到 BTC4HBreakoutPulse（不可上傳至 SStateMarketTerminal）：
-- src/structure.js
-- src/engine.js
-- src/app.js
-- index.html
-- VERSION.json
-- package.json
-- README.md
-- TEST_REPORT.md
-- tests/structure_first.test.mjs
-- tests/layout_contract.test.mjs
-- docs/SELECTION_RULE_V1213.md
+BTC4HBreakoutPulse v1.3.0 ONLY
+
+上傳至 GitHub 儲存庫：youjianchonglangshou-design/BTC4HBreakoutPulse
+不要誤上傳至 SStateMarketTerminal。
+
+覆蓋／新增檔案（保留目錄結構）：
+index.html
+styles.css
+package.json
+VERSION.json
+README.md
+RETRAIN_REPORT.md
+TEST_REPORT.md
+OVERWRITE_THESE.txt
+src/app.js
+src/engine.js
+src/model.js
+src/storage.js
+model/regime_v7.json                 [重要：新增訓練後模型]
+research/retrain_v7.py              [新增可重跑研究]
+research/structure_first_v7_samples.csv
+research/structure_first_v7_metrics.csv
+research/parity_v7_cases.json
+tests/v7_regime.test.mjs
+tests/regime_v7_browser.py
+tests/layout_contract.test.mjs
+tests/intrabar_live.test.mjs
+tests/live_breakout_browser.py
+
+提醒：舊 v6 的 model/v6.json 可保留作為歷史對照，
+但新版畫面不再讀取它；src/intrabar.js 雖仍可能存在於舊倉庫，也不再引用。
+新版的 model/regime_v7.json 需一併上傳，否則網站會顯示載入模型失敗。
+
+注意：v7.0 的中軌斜率與平均K確實入模，但後段歷史誤差未勝過距離模型；
+新模型不是已獲證實的交易獲利策略。

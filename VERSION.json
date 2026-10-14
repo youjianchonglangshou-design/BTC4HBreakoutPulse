@@ -1,12 +1,12 @@
 {
   "app": "BTC 4H Breakout Pulse",
-  "version": "1.2.13",
-  "release": "2026-10-13",
-  "model": "v6.0",
+  "version": "1.3.0",
+  "release": "2026-10-14",
+  "model": "v7.0",
   "timeZone": "Asia/Taipei",
   "freezeAt": "20:00",
   "settleAt": "00:00",
   "tabQuoteIntervalSeconds": 10,
   "deployment": "GitHub Pages static",
-  "focus": "Structure-first 4H alignment selection: prefer confirmed nearby formation in 50 / 150 / 450 bars before older historical levels. Keep closest forward level within current tier. Never drop >8-touch box supports. Distance outside original 3 ATR v6 domain returns no probability."
+  "focus": "20:00 pre-decision-only structure-first BTC 4H probability with trained SState slope, HA and midline distance. No post-20:00 repricing."
 }

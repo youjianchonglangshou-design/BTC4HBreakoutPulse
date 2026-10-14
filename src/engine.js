@@ -1,6 +1,6 @@
 import {atr14,dailySignal,buildPartialDaily,normalizeBars} from './market.js';
 import {selectFirstBarrier} from './structure.js';
-import {calculateV6} from './model.js';
+import {calculateV6,calculateRegimeV7} from './model.js?v=1.3.0';
 import {cutoffAt20,DAY} from './clock.js';
 
 export const FOUR_HOURS=14400000, FIFTEEN=900000;
@@ -44,12 +44,14 @@ export function evaluate({fourHour,fifteenMin,daily,model,gate,price,asOf,strict
  // structure, but gets NO fabricated / extrapolated probability.
  if(line.outsideV6DistanceRange)return {...primary,line,status:'NO_BARRIER',
    reason:`近期${kind} ${line.level.toFixed(1)} 距現價 ${line.distanceATR.toFixed(2)} ATR；超過舊模型 3 ATR 的訓練選線範圍，暫不提供未校準機率`};
- const fit=calculateV6({kind,level:line.level,price:spotPrice,atr4h:atr,bars15:m15,model,gate});
- if(fit.status!=='OK')return {...primary,status:fit.status,line,reason:'所選4H關卡無法計算v6機率：'+fit.status};
+ const fit=model?.version==='v7.0-structure-first-regime'?
+  calculateRegimeV7({kind,level:line.level,price:spotPrice,atr4h:atr,daily:dailyState,model}):
+  calculateV6({kind,level:line.level,price:spotPrice,atr4h:atr,bars15:m15,model,gate});
+ if(fit.status!=='OK')return {...primary,status:fit.status,line,reason:'所選4H關卡無法計算機率：'+fit.status};
  return {status:'OK',kind,price:spotPrice,atr,daily:dailyState,line,prediction:fit,
    fourCount:four.length,m15Count:m15.length,asOf,
    source:'PIONEX:BTCUSDT.P 永續合約 4H / 15M / 1D + Pionex 即時價格',
-   caveat:'v6 係 Binance 現貨九年歷史訓練；Pionex 行情切換後機率尚未重新校準。20:00 前動態推演亦未獨立校準。'};
+   caveat:model?.version==='v7.0-structure-first-regime'?'v7 中軌斜率/HA 黃紫已真實訓練但時間外誤差未改善；Binance Spot 非 Pionex PERP，20:00 前動態機率尚未另行校準。':'歷史 v6 模型'};
 }
 export function settlementForSnapshot(snapshot,bar4h,asOf=Date.now()){
  if(snapshot?.status!=='OK'||!Number.isFinite(snapshot.cut)||!snapshot.line)return {status:'NOT_PREDICTED'};

@@ -1,10 +1,10 @@
 import {fetchKlines,fetchLatestKlines,fetchQuotes} from './feeds.js';
 import {normalizeBars,atr14} from './market.js';
-import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js';
+import {evaluate,freezeSnapshot,settlementForSnapshot} from './engine.js?v=1.3.0';
 import {selectFirstBarrier,scanHistoricalAlignments} from './structure.js';
 import {forecastWindow,taiwanDate,tpeClock,tpeTime,DAY} from './clock.js';
-import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js';
-import {renderCandles4h} from './chart.js?v=1.2.13';
+import {getFrozen,storeFrozen,getSettlement,storeSettlement,recentFrozenDates} from './storage.js?v=1.3.0';
+import {renderCandles4h} from './chart.js?v=1.3.0';
 import {updateBtcTabTitle} from './tab_title.js';
 import {getDirectionLabels} from './labels.js';
 import {probabilityTone,contextTone} from './semantic.js';
@@ -19,9 +19,9 @@ const FOUR_HOURS=4*ONE_HOUR;
 function merge(old,rows,max=2700){return [...new Map([...old,...rows].map(r=>[r.ts,r])).values()].sort((a,b)=>a.ts-b.ts).slice(-max);}
 function showError(){const el=$('error');el.hidden=!S.error;if(S.error)el.textContent=S.error;}
 async function loadModel(){
- const [a,b]=await Promise.all(['model/v6.json','model/rule.json'].map(async p=>{
-  const res=await fetch(p,{cache:'no-store'});if(!res.ok)throw Error(`${p} HTTP ${res.status}`);return res.json();
- }));S.model=a;S.gate=b;
+ const res=await fetch('model/regime_v7.json',{cache:'no-store'});
+ if(!res.ok)throw Error(`model/regime_v7.json HTTP ${res.status}`);
+ S.model=await res.json();S.gate={};
 }
 async function loadHistory(initial=false){
  if(S.refreshBusy)return;S.refreshBusy=true;
@@ -54,7 +54,7 @@ async function pollQuote(){
 }
 function extractQuotePrice(){return S.quotes?.pionex??null;}
 function createModelData(now){
- if(!S.model||!S.gate)return {status:'MODEL_LOADING',reason:'載入v6權重中'};
+ if(!S.model)return {status:'MODEL_LOADING',reason:'載入 v7.0 日線機率模型中'};
  return evaluate({fourHour:S.fourHour,fifteenMin:S.fifteenMin,daily:S.daily,
   model:S.model,gate:S.gate,price:extractQuotePrice(),asOf:now});
 }
@@ -183,6 +183,8 @@ function render(){
  // Before 20:00: live model probability; at/after 20:00: immutable snapshot.
  // Missing/invalid model: show price only, NEVER a stale or invented %.
  const tabForecast=snap?.status==='OK'?{kind:snap.kind,probability:snap.prediction?.probability}:null;
+ // Title and main value report only the 20:00-00:00 PRE-DECISION probability.
+ // After 20:00, frozen probability never changes; price in tab continues updating.
  updateBtcTabTitle(extractQuotePrice(),document,tabForecast);
  const frozen=!pre;
  const activeKind=snap?.kind??(snap?.daily?.above?'頂齊':snap?.daily?.above===false?'底齊':null);
@@ -207,14 +209,16 @@ function render(){
   set('probName',getDirectionLabels(snap.kind).title);
   set('probability',`${fmt(percent,1)}%`);
   set('probInterpret',percent>=55?getDirectionLabels(snap.kind).strong:percent<=45?getDirectionLabels(snap.kind).weak:'接近中性');
-  set('explanation',snap.kind==='底齊'?p.reason.replaceAll('突破','跌破').replaceAll('頂齊','底齊'):p.reason);
+  set('explanation',p.reason);
   setFeatureRows([
    ['預測目標',`${snap.kind} ${fmt(snap.line.level,1)}`],
    ['4H ATR（14）',fmt(snap.atr,1)],
    ['關卡距離',`${fmt(p.distanceATR,3)} ATR`],
-   ['兩小時貼線規律',p.ruleApplied?'已觸發 · +15.0pp':'未觸發'],
-   ['基礎模型機率',`${fmt(p.baseline*100,1)}%`],
-   ['中軌、HA','決定觀測方向／顯示背景，未虛構加分']
+   ['中軌斜率／變化效果',`${p.slopeEffectPp>=0?'+':''}${fmt(p.slopeEffectPp,2)} 百分點`],
+   ['平均 K 黃紫效果',`${p.haEffectPp>=0?'+':''}${fmt(p.haEffectPp,2)} 百分點`],
+   ['中軌距離效果',`${p.midDistanceEffectPp>=0?'+':''}${fmt(p.midDistanceEffectPp,2)} 百分點`],
+   ['中性日線因素機率',`${fmt(p.baseline*100,1)}%`],
+   ['模型',`v7.0 · ${snap.kind}獨立訓練 ${p.trainingSize}筆 · 未證實優於距離基準`]
   ]);
   updatePalette(snap.daily,snap.kind,percent);
   renderLevels(snap,now);
@@ -226,6 +230,7 @@ function render(){
   updatePalette(snap?.daily,snap?.kind,NaN);
   renderLevels(snap,now);
  }
+ set('probSub','20:00～00:00 · v7.0');
  renderArchive();
 }
 async function initialize(){

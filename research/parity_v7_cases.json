@@ -1,0 +1,392 @@
+[
+  {
+    "kind": "頂齊",
+    "price": 5720.02,
+    "level": 5762.25,
+    "atr": 217.03714285714275,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 2.0253579833580084,
+      "slopeImprovementPct": 1.1616078830498149,
+      "slopeState": "rising",
+      "midDistancePct": 24.999147571723345
+    },
+    "expectedProbability": 0.29535363535737064,
+    "date": "2017-10-14"
+  },
+  {
+    "kind": "頂齊",
+    "price": 3804.6,
+    "level": 3839.26,
+    "atr": 85.75642857142854,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 0.3938161920085609,
+      "slopeImprovementPct": 0.5460529987809473,
+      "slopeState": "rising",
+      "midDistancePct": 5.374384400748755
+    },
+    "expectedProbability": 0.22413228587724934,
+    "date": "2018-12-29"
+  },
+  {
+    "kind": "頂齊",
+    "price": 7878.56,
+    "level": 7895.14,
+    "atr": 195.72785714285723,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 0.6126240828424888,
+      "slopeImprovementPct": 0.5819502501007675,
+      "slopeState": "rising",
+      "midDistancePct": 7.516412323571453
+    },
+    "expectedProbability": 0.38226543724272594,
+    "date": "2020-01-09"
+  },
+  {
+    "kind": "頂齊",
+    "price": 11477.0,
+    "level": 11507.97,
+    "atr": 76.1307142857144,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 0.301439561254136,
+      "slopeImprovementPct": -0.1520065805623307,
+      "slopeState": "rising",
+      "midDistancePct": 3.709299331987381
+    },
+    "expectedProbability": 0.31239458915548074,
+    "date": "2020-10-19"
+  },
+  {
+    "kind": "頂齊",
+    "price": 44173.15,
+    "level": 44855.0,
+    "atr": 693.2235714285728,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 0.7988556393034859,
+      "slopeImprovementPct": 0.1377062935104129,
+      "slopeState": "rising",
+      "midDistancePct": 7.351668807367373
+    },
+    "expectedProbability": 0.0912642137264587,
+    "date": "2022-02-16"
+  },
+  {
+    "kind": "頂齊",
+    "price": 21404.63,
+    "level": 21529.12,
+    "atr": 277.25142857142833,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 0.381221937918249,
+      "slopeImprovementPct": 0.0282503230731996,
+      "slopeState": "rising",
+      "midDistancePct": 6.028599791078149
+    },
+    "expectedProbability": 0.27366989288614774,
+    "date": "2022-11-05"
+  },
+  {
+    "kind": "頂齊",
+    "price": 30523.02,
+    "level": 30684.38,
+    "atr": 455.8700000000005,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 0.7497959928344919,
+      "slopeImprovementPct": 0.0538222034238714,
+      "slopeState": "rising",
+      "midDistancePct": 6.763977901016949
+    },
+    "expectedProbability": 0.3180149151250285,
+    "date": "2023-07-01"
+  },
+  {
+    "kind": "頂齊",
+    "price": 43753.94,
+    "level": 44008.0,
+    "atr": 643.1792857142854,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 0.6011791595877374,
+      "slopeImprovementPct": 0.0430824492956468,
+      "slopeState": "rising",
+      "midDistancePct": 2.5947084146748844
+    },
+    "expectedProbability": 0.2848735648426569,
+    "date": "2023-12-22"
+  },
+  {
+    "kind": "頂齊",
+    "price": 64723.73,
+    "level": 64752.14,
+    "atr": 1184.6585714285716,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 0.2374675418307023,
+      "slopeImprovementPct": 0.8048429409295464,
+      "slopeState": "rising",
+      "midDistancePct": 8.576816265482968
+    },
+    "expectedProbability": 0.38512811568708594,
+    "date": "2024-07-17"
+  },
+  {
+    "kind": "頂齊",
+    "price": 100830.86,
+    "level": 102235.6,
+    "atr": 1117.4457142857125,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": -0.236961910022153,
+      "slopeImprovementPct": 0.0445586328847435,
+      "slopeState": "flat",
+      "midDistancePct": 4.944054520828511
+    },
+    "expectedProbability": 0.04667916083406899,
+    "date": "2025-01-07"
+  },
+  {
+    "kind": "頂齊",
+    "price": 117995.0,
+    "level": 119230.16,
+    "atr": 1460.8142857142852,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": 0.5206929675777179,
+      "slopeImprovementPct": -0.0843390015386931,
+      "slopeState": "rising",
+      "midDistancePct": 5.457216006025134
+    },
+    "expectedProbability": 0.11601897129411964,
+    "date": "2025-07-17"
+  },
+  {
+    "kind": "頂齊",
+    "price": 71157.77,
+    "level": 71246.54,
+    "atr": 1200.6371428571438,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 0.0573461371221356,
+      "slopeImprovementPct": -0.3661539065751336,
+      "slopeState": "flat",
+      "midDistancePct": 0.8738933195114207
+    },
+    "expectedProbability": 0.49710251774336367,
+    "date": "2026-03-24"
+  },
+  {
+    "kind": "頂齊",
+    "price": 84620.01,
+    "level": 86620.0,
+    "atr": 1046.6657142857148,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": 0.3198902115653734,
+      "slopeImprovementPct": 0.1845716752581053,
+      "slopeState": "rising",
+      "midDistancePct": 5.612931508570984
+    },
+    "expectedProbability": 0.010546858831921472,
+    "date": "2026-09-25"
+  },
+  {
+    "kind": "底齊",
+    "price": 6241.71,
+    "level": 6117.94,
+    "atr": 423.8985714285713,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": 0.3958204114089383,
+      "slopeImprovementPct": -0.8394076534706552,
+      "slopeState": "rising",
+      "midDistancePct": -6.18279687520753
+    },
+    "expectedProbability": 0.2591641797183476,
+    "date": "2017-11-12"
+  },
+  {
+    "kind": "底齊",
+    "price": 6459.28,
+    "level": 6385.01,
+    "atr": 91.7771428571428,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": -0.1348103938478562,
+      "slopeImprovementPct": -0.0612226182103991,
+      "slopeState": "flat",
+      "midDistancePct": -3.850337434665541
+    },
+    "expectedProbability": 0.09428530922929237,
+    "date": "2018-09-14"
+  },
+  {
+    "kind": "底齊",
+    "price": 7943.34,
+    "level": 7941.91,
+    "atr": 88.50642857142839,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": -0.0865464018941811,
+      "slopeImprovementPct": 0.7053296857973939,
+      "slopeState": "flat",
+      "midDistancePct": -3.1383580042359083
+    },
+    "expectedProbability": 0.4154371111657361,
+    "date": "2019-10-19"
+  },
+  {
+    "kind": "底齊",
+    "price": 34849.99,
+    "level": 34663.09,
+    "atr": 944.2935714285704,
+    "daily": {
+      "averageK": "黃",
+      "slopePctPerDay": -0.0342234873007933,
+      "slopeImprovementPct": 0.5342227728308796,
+      "slopeState": "flat",
+      "midDistancePct": -0.825031948313637
+    },
+    "expectedProbability": 0.3352383293701882,
+    "date": "2021-06-30"
+  },
+  {
+    "kind": "底齊",
+    "price": 38898.18,
+    "level": 38349.01,
+    "atr": 984.1385714285722,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": -0.6761235221464226,
+      "slopeImprovementPct": 0.1762918979056628,
+      "slopeState": "falling",
+      "midDistancePct": -7.318483154388556
+    },
+    "expectedProbability": 0.18467419924555492,
+    "date": "2022-01-21"
+  },
+  {
+    "kind": "底齊",
+    "price": 19692.5,
+    "level": 18306.93,
+    "atr": 885.172857142857,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": -1.7569500202707544,
+      "slopeImprovementPct": -0.952977710940186,
+      "slopeState": "falling",
+      "midDistancePct": -28.274101888730183
+    },
+    "expectedProbability": 0.03171096363139175,
+    "date": "2022-06-19"
+  },
+  {
+    "kind": "底齊",
+    "price": 16213.29,
+    "level": 16168.38,
+    "atr": 137.68142857142865,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": -1.1841361410313112,
+      "slopeImprovementPct": -0.0289607849206472,
+      "slopeState": "falling",
+      "midDistancePct": -1.5767352353325048
+    },
+    "expectedProbability": 0.22048581471154025,
+    "date": "2022-11-28"
+  },
+  {
+    "kind": "底齊",
+    "price": 29167.51,
+    "level": 29140.8,
+    "atr": 223.49928571428583,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": -0.2316124742354492,
+      "slopeImprovementPct": -0.0675369651177204,
+      "slopeState": "flat",
+      "midDistancePct": -1.270120143153275
+    },
+    "expectedProbability": 0.2703916747279272,
+    "date": "2023-08-04"
+  },
+  {
+    "kind": "底齊",
+    "price": 58559.66,
+    "level": 56886.0,
+    "atr": 1653.3114285714296,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": -0.7179987340142426,
+      "slopeImprovementPct": -0.3737914816382833,
+      "slopeState": "falling",
+      "midDistancePct": -8.388060712448219
+    },
+    "expectedProbability": 0.05977697531066073,
+    "date": "2024-05-02"
+  },
+  {
+    "kind": "底齊",
+    "price": 94398.6,
+    "level": 93044.79,
+    "atr": 1737.266428571426,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": -0.0653691395616545,
+      "slopeImprovementPct": -0.4317134560053948,
+      "slopeState": "flat",
+      "midDistancePct": -5.062152516821394
+    },
+    "expectedProbability": 0.07173996415312413,
+    "date": "2024-12-24"
+  },
+  {
+    "kind": "底齊",
+    "price": 104776.23,
+    "level": 104645.67,
+    "atr": 1137.0028571428568,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": -0.0685013573209004,
+      "slopeImprovementPct": 0.0408966517572324,
+      "slopeState": "flat",
+      "midDistancePct": -0.9194116838474042
+    },
+    "expectedProbability": 0.277988883147067,
+    "date": "2025-06-19"
+  },
+  {
+    "kind": "底齊",
+    "price": 90330.36,
+    "level": 89872.51,
+    "atr": 1116.693571428572,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": 0.313883328734494,
+      "slopeImprovementPct": 0.5242132357708418,
+      "slopeState": "rising",
+      "midDistancePct": -0.1795061688384724
+    },
+    "expectedProbability": 0.26268591142852815,
+    "date": "2025-12-13"
+  },
+  {
+    "kind": "底齊",
+    "price": 77021.36,
+    "level": 76933.02,
+    "atr": 779.78714285714,
+    "daily": {
+      "averageK": "紫",
+      "slopePctPerDay": 0.1816187949689835,
+      "slopeImprovementPct": -0.9334222334740362,
+      "slopeState": "rising",
+      "midDistancePct": -2.157600775338653
+    },
+    "expectedProbability": 0.3021153392598152,
+    "date": "2026-09-11"
+  }
+]
